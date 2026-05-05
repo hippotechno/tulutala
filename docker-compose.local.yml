@@ -1,6 +1,6 @@
 services:
   winter-app:
-    build:
+    build: &winter-app-build
       context: .
       dockerfile: docker/Dockerfile
       target: local
@@ -28,6 +28,31 @@ services:
     volumes:
       - ${APP_CODE_PATH:-.}:/var/www/html:cached
       - winter_cache:/var/www/html/bootstrap/cache
+
+  queue-worker:
+    build: *winter-app-build
+    image: ${LOCAL_IMAGE_NAME:-winter-app:local}
+    container_name: ${QUEUE_WORKER_CONTAINER_NAME:-winter-queue-worker-local}
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      LOG_CHANNEL: stderr
+      CHOWN_STORAGE: "false"
+    depends_on:
+      - winter-app
+    extra_hosts:
+      - "storage.tuimuon.xyz:171.235.163.107"
+    networks:
+      - default
+      - external_backend
+    volumes:
+      - ${APP_CODE_PATH:-.}:/var/www/html:cached
+      - winter_cache:/var/www/html/bootstrap/cache
+    entrypoint:
+      - sh
+      - -lc
+      - cd /var/www/html && mkdir -p storage/framework/cache storage/framework/sessions storage/framework/testing storage/framework/views storage/logs bootstrap/cache && chown -R www-data:www-data bootstrap/cache && exec su -s /bin/sh www-data -c "php artisan queue:work $${QUEUE_WORKER_ARGS:---queue=default --sleep=3 --tries=3 --timeout=1800}"
 
   postgres:
     profiles:
