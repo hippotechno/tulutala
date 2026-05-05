@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9]
+
+### Added
+
+- Add a local-only `queue-worker` service in `docker-compose.local.yml` to run `php artisan queue:work` automatically when local Docker services start.
+- Add local queue worker environment options in `docker/.env.local.example`: `QUEUE_WORKER_CONTAINER_NAME` and `QUEUE_WORKER_ARGS`.
+
+### Changed
+
+- Keep queue worker setup local-only and do not include it in `docker-compose.runtime.yml`, so Harbor runtime image deployment flow is unchanged.
+
 ## [1.0.8]
 
 ### Added
