@@ -84,7 +84,7 @@ themes:
       branch: dev
     - folder: wn-gaion-theme
       repo: git@github.com:hippotechno/wn-gaion-theme.git
-      branch: main
+      branch: dev
     - folder: wn-researchvn-theme
       repo: git@github.com:hippotechno/wn-researchvn-theme.git
       branch: main
