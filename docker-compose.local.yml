@@ -28,6 +28,7 @@ services:
     volumes:
       - ${APP_CODE_PATH:-.}:/var/www/html:cached
       - winter_cache:/var/www/html/bootstrap/cache
+      - ./docker/xdebug.ini:/usr/local/etc/php/conf.d/99-xdebug.ini:ro
 
   queue-worker:
     build: *winter-app-build
@@ -49,6 +50,7 @@ services:
     volumes:
       - ${APP_CODE_PATH:-.}:/var/www/html:cached
       - winter_cache:/var/www/html/bootstrap/cache
+      - ./docker/xdebug.ini:/usr/local/etc/php/conf.d/99-xdebug.ini:ro
     entrypoint:
       - sh
       - -lc

@@ -731,6 +731,12 @@ Lưu ý: nếu build fail nhưng container vẫn `Created` hoặc `Started`, Doc
 
 Một số command dev, ví dụ `winter:util git pull`, cần `git` bên trong container.
 
+Để vào shell trong container (working dir `/var/www/html`), dùng:
+
+```bash
+./scripts/local-compose.sh exec winter-app bash
+```
+
 Local image đã cài `git` và `openssh-client`. Nếu vẫn gặp lỗi, rebuild lại local image:
 
 ```bash
@@ -775,15 +781,95 @@ Repo này đã đặt local theo hướng nhanh hơn:
 - `XDEBUG_START_WITH_REQUEST=trigger`
 - Bind mount app dùng `:cached`
 
-Khi cần debug lại, chỉ cần sửa `.env`:
+Khi cần bật debug local, sửa `.env`:
 
 ```env
 XDEBUG_MODE=debug,develop
-XDEBUG_START_WITH_REQUEST=trigger
+XDEBUG_START_WITH_REQUEST=yes
 ```
 
-Rồi restart app:
+Lưu ý:
+
+- Nếu `.env` có nhiều dòng `XDEBUG_*` bị trùng, giữ 1 bộ duy nhất ở cuối file để tránh override ngoài ý muốn.
+- Local compose đã mount `docker/xdebug.ini` vào container, nên đổi file này không cần build image, chỉ cần recreate/restart container.
+
+Áp dụng cấu hình:
 
 ```bash
-./scripts/local-compose.sh restart winter-app
+./scripts/local-compose.sh up -d --force-recreate winter-app
+```
+
+Kiểm tra runtime Xdebug trong container:
+
+```bash
+./scripts/local-compose.sh exec -T winter-app php -i | grep -E "xdebug.mode|xdebug.start_with_request|xdebug.client_host|xdebug.client_port|xdebug.idekey"
+```
+
+Kỳ vọng:
+
+- `xdebug.mode => debug,develop`
+- `xdebug.start_with_request => yes`
+
+### VS Code (`launch.json`)
+
+Tạo file `.vscode/launch.json`:
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Listen for Xdebug (Docker)",
+            "type": "php",
+            "request": "launch",
+            "hostname": "0.0.0.0",
+            "port": 9003,
+            "pathMappings": {
+                "/var/www/html": "${workspaceFolder}"
+            },
+            "log": true
+        }
+    ]
+}
+```
+
+### Đổi port Xdebug (nếu `9003` bị dùng)
+
+1. Sửa `.env`:
+
+```env
+XDEBUG_CLIENT_PORT=9005
+```
+
+2. Sửa `.vscode/launch.json` cùng port:
+
+```json
+"port": 9005
+```
+
+3. Recreate service:
+
+```bash
+./scripts/local-compose.sh up -d --force-recreate winter-app
+```
+
+4. Verify lại:
+
+```bash
+./scripts/local-compose.sh exec -T winter-app php -i | grep -E "xdebug.client_port|xdebug.mode|xdebug.start_with_request"
+```
+
+### Breakpoint không dừng
+
+Checklist nhanh:
+
+- VS Code đang chạy `Listen for Xdebug (Docker)`.
+- Breakpoint đặt ở file/line thực sự được execute.
+- `pathMappings` đúng: `"/var/www/html": "${workspaceFolder}"`.
+- `xdebug.mode` có `debug` và `xdebug.start_with_request` là `yes` (hoặc `trigger` + có trigger).
+
+Nếu dùng `trigger` thay vì `yes`, gọi URL với:
+
+```text
+?XDEBUG_SESSION=1
 ```
