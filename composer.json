@@ -35,7 +35,7 @@
     },
     "require": {
         "laravel/framework": "^9.52",
-        "php": "^8.0.2",
+        "php": "^8.3",
         "php-http/guzzle7-adapter": "^1.1",
         "tpetry/laravel-postgresql-enhanced": "*",
         "wikimedia/composer-merge-plugin": "~2.1.0",

@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Keep queue worker setup local-only and do not include it in `docker-compose.runtime.yml`, so Harbor runtime image deployment flow is unchanged.
+- Remove remaining CKFinder Docker build steps by dropping `ckfinder.example.php` copy and CKFinder class autoload verification from `docker/Dockerfile`.
+- Complete Hippo.Core CKFinder cleanup by switching `UFilePicker` to `MyMediaManager` and removing CKFinder runtime bindings/routes/config in `plugins/hippo/core`.
 
 ## [1.0.8]
 

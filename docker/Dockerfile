@@ -82,8 +82,7 @@ ARG IMAGE_VERSION
 COPY artisan composer.json composer.lock index.php .htaccess /var/www/html/
 COPY bootstrap /var/www/html/bootstrap
 COPY config /var/www/html/config
-RUN cp /var/www/html/config/hippo/core/config.example.php /var/www/html/config/hippo/core/config.php \
-    && cp /var/www/html/config/hippo/core/ckfinder.example.php /var/www/html/config/hippo/core/ckfinder.php
+RUN cp /var/www/html/config/hippo/core/config.example.php /var/www/html/config/hippo/core/config.php
 COPY plugins /var/www/html/plugins
 COPY themes /var/www/html/themes
 
@@ -141,7 +140,6 @@ RUN set -eux; \
         --no-dev \
         --classmap-authoritative \
         --no-interaction; \
-    php -r "require 'vendor/autoload.php'; if (!class_exists('CKSource\\\\CKFinder\\\\CKFinder')) { fwrite(STDERR, 'CKFinder connector class is not autoloadable.'.PHP_EOL); exit(1); }"; \
     php artisan hippo:setup --phase=build --scope=image --check --no-prompt; \
     if [ "$PRUNE_DEV_ARTIFACTS" = "true" ]; then \
         find /var/www/html/modules /var/www/html/plugins /var/www/html/themes /var/www/html/vendor \
