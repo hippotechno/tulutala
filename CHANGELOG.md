@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add a local-only `queue-worker` service in `docker-compose.local.yml` to run `php artisan queue:work` automatically when local Docker services start.
 - Add local queue worker environment options in `docker/.env.local.example`: `QUEUE_WORKER_CONTAINER_NAME` and `QUEUE_WORKER_ARGS`.
+- `postal` and `telegram-bot-api` in `config\services.php`.
 
 ### Changed
 

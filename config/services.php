@@ -27,4 +27,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
     ],
+    'postal' => [
+        'base_uri'   => env('POSTAL_BASE_URI', 'http://localhost:5001'),
+        'server_key' => env('POSTAL_API_KEY'),
+        'timeout'    => 10,
+    ],
+    'telegram-bot-api' => [
+        'token' => env('TELEGRAM_BOT_TOKEN'),
+        'base_uri' => env('TELEGRAM_BASE_URI', 'https://api.telegram.org'),
+    ],
 ];
