@@ -280,7 +280,6 @@ require_file composer.lock
 require_file docker/Dockerfile
 require_file .dockerignore
 require_file config/hippo/core/config.example.php
-require_file config/hippo/core/ckfinder.example.php
 require_file config/hippo-repos.yaml
 
 if [[ -f "$ROOT_DIR/composer.json" ]]; then
@@ -296,7 +295,6 @@ fi
 require_dockerignore ".env"
 require_dockerignore ".env.*"
 require_dockerignore "config/hippo/core/config.php"
-require_dockerignore "config/hippo/core/ckfinder.php"
 require_dockerignore "vendor"
 require_dockerignore "storage"
 require_dockerignore "**/node_modules"

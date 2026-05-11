@@ -79,7 +79,32 @@ Thêm domain local vào `/etc/hosts`:
 ./scripts/local-compose.sh exec winter-app php artisan winter:up --no-interaction
 ```
 
-### 8. Truy cập app
+### 8. Export và trust certificate local
+
+Caddy đang dùng `tls internal`, nên local root CA cần được export và trust vào macOS System Keychain để trình duyệt tin cậy HTTPS.
+
+```bash
+./scripts/local-caddy-cert.sh
+```
+
+Script này sẽ:
+
+- export root cert của Caddy ra `docker/caddy-local-root.crt`
+- trust cert đó vào System Keychain trên macOS
+
+Nếu chỉ muốn export file cert:
+
+```bash
+./scripts/local-caddy-cert.sh --export-only
+```
+
+Nếu cert đã export sẵn và chỉ muốn trust lại:
+
+```bash
+./scripts/local-caddy-cert.sh --trust-only
+```
+
+### 9. Truy cập app
 
 ```text
 https://tulutala-local.test
@@ -379,7 +404,9 @@ awk -v k="$APP_KEY_VALUE" 'BEGIN{done=0} /^APP_KEY=/{print "APP_KEY=" k; done=1;
 
 ## Nâng Cao: Trust Cert HTTPS Local Trên macOS
 
-Caddy đang dùng `tls internal`, nên lần đầu có thể báo cert warning.
+Script `./scripts/local-caddy-cert.sh` đã tự động làm phần này.
+
+Nếu muốn thao tác thủ công, dùng các lệnh bên dưới.
 
 ### Export root cert
 
@@ -392,6 +419,51 @@ Caddy đang dùng `tls internal`, nên lần đầu có thể báo cert warning.
 ```bash
 sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain ./docker/caddy-local-root.crt
 ```
+
+## Nâng Cao: Trust Cert HTTPS Local Trên Windows
+
+Trên Windows, có 2 cách export cert:
+
+- Dùng `docker compose cp` trực tiếp từ PowerShell.
+- Dùng `./scripts/local-caddy-cert.sh --export-only` nếu bạn đang chạy Git Bash hoặc WSL.
+
+Bước trust cert cần chạy bằng PowerShell hoặc `certutil` với quyền Administrator.
+
+### Export root cert bằng Docker Compose
+
+Mở PowerShell tại root repo rồi chạy:
+
+```powershell
+docker compose --env-file .env --env-file docker/.env.local -f docker-compose.local.yml cp caddy:/data/caddy/pki/authorities/local/root.crt docker/caddy-local-root.crt
+```
+
+### Export root cert bằng script
+
+```bash
+./scripts/local-caddy-cert.sh --export-only
+```
+
+### Trust cert bằng PowerShell
+
+Mở PowerShell với quyền Administrator, rồi chạy:
+
+```powershell
+Import-Certificate -FilePath "C:\path\to\my_wintercms\docker\caddy-local-root.crt" -CertStoreLocation Cert:\LocalMachine\Root
+```
+
+Nếu muốn trust cho user hiện tại thay vì toàn máy:
+
+```powershell
+Import-Certificate -FilePath "C:\path\to\my_wintercms\docker\caddy-local-root.crt" -CertStoreLocation Cert:\CurrentUser\Root
+```
+
+### Trust cert bằng certutil
+
+```powershell
+certutil -addstore -f Root "C:\path\to\my_wintercms\docker\caddy-local-root.crt"
+```
+
+Sau khi import xong, đóng và mở lại browser để certificate mới được nhận.
 
 ## Nâng Cao: Lệnh Local Thường Dùng
 

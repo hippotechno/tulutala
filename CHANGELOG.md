@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.10]
+
+### Added
+
+- Add `scripts/local-caddy-cert.sh` to export the Caddy local root certificate and trust it in the macOS System Keychain in one step.
+- Add Windows HTTPS local certificate instructions using `Import-Certificate` and `certutil`.
+
+### Changed
+
+- Ignore the generated `docker/caddy-local-root.crt` file so local cert exports do not dirty the working tree.
+- Update README local HTTPS setup instructions to use the new certificate automation script.
+
+### Fixed
+
+- Missing `aws/aws-sdk-php` and `league/flysystem-aws-s3-v3` package for supporting S3 FileSystem.
+
 ## [1.0.9]
 
 ### Added
