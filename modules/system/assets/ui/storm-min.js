@@ -2099,14 +2099,7 @@ if(this.options.size)modalDialog.addClass('size-'+this.options.size)
 if(this.options.adaptiveHeight)modalDialog.addClass('adaptive-height')
 if(this.options.zIndex!==null)modal.css('z-index',this.options.zIndex+20)
 return modal.append(modalDialog.append(modalContent))}
-Popup.prototype.setContent=function(contents){this.$content.html(contents)
-this.setLoading(false)
-this.show()
-this.firstDiv=this.$content.find('>div:first')
-if(this.firstDiv.length>0)this.firstDiv.data('oc.popup',this)
-var $defaultFocus=$('[default-focus]',this.$content)
-if($defaultFocus.is(":visible")){window.setTimeout(function(){$defaultFocus.focus()
-$defaultFocus=null},300)}}
+Popup.prototype.setContent=function(t){var i=$(t),s=$("[data-popup-size]",i);s.length>0&&this.$dialog.addClass("size-"+s.data("popup-size")),this.setLoading(!1),this.$modal.modal("show"),this.$content.html(i),this.$modal.on("click.dismiss.popup",'[data-dismiss="popup"]',$.proxy(this.hide,this)),this.triggerEvent("popupShow"),this.triggerEvent("show.oc.popup"),this.$dialog.css("transform","inherit"),this.firstDiv=this.$content.find(">div:first"),this.firstDiv.length>0&&this.firstDiv.data("oc.popup",this);var o=$("[default-focus]",this.$content);o.is(":visible")&&window.setTimeout(function(){o.focus(),o=null},300)};
 Popup.prototype.setBackdrop=function(val){if(val&&!this.$backdrop){this.$backdrop=$('<div class="popup-backdrop fade" />')
 if(this.options.zIndex!==null)this.$backdrop.css('z-index',this.options.zIndex)
 this.$backdrop.appendTo(document.body)
