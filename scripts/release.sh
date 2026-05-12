@@ -288,6 +288,12 @@ fi
 docker buildx use "$BUILDER_NAME" >/dev/null
 docker buildx inspect --bootstrap "$BUILDER_NAME" >/dev/null
 
+cleanup_buildx_builder() {
+  docker buildx stop "$BUILDER_NAME" >/dev/null 2>&1 || true
+  docker buildx rm -f "$BUILDER_NAME" >/dev/null 2>&1 || true
+}
+trap cleanup_buildx_builder EXIT
+
 TAGS=(-t "$VERSION_TAG")
 if [[ "$PUSH_LATEST" == "true" ]]; then
   TAGS+=(-t "$LATEST_TAG")

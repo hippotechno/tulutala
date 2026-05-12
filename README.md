@@ -127,11 +127,12 @@ Ghi chú: nếu `APP_KEY` đang trống thì làm theo phần `Nâng cao: Chạy
 - PostgreSQL (local)
 - Redis (cache/session/queue)
 - Queue worker (local, dùng cho notification/event async)
+- Scheduler (local, chạy `php artisan schedule:run` mỗi phút)
 - Caddy (reverse proxy HTTPS local)
 
 ## File Docker chính
 
-- `docker-compose.local.yml`: chạy local (app + queue worker + postgres + redis + caddy)
+- `docker-compose.local.yml`: chạy local (app + queue worker + scheduler + postgres + redis + caddy)
 - `docker-compose.runtime.yml`: chạy server/runtime từ image đã build (chỉ app)
 - `docker/Dockerfile`: image app
 - `docker/entrypoint.sh`: entrypoint app
@@ -217,6 +218,19 @@ Nếu chỉ muốn test nhanh không dùng worker, có thể tạm đặt trong 
 ```env
 QUEUE_CONNECTION=sync
 ```
+
+### Scheduler local
+
+Local Compose có service `scheduler` riêng để tự chạy Winter/Laravel scheduler trong container PHP. Service này chạy trong `/var/www/html` và gọi `php artisan schedule:run --no-interaction` mỗi 60 giây.
+
+Chạy hoặc restart scheduler:
+
+```bash
+./scripts/local-compose.sh up -d scheduler
+./scripts/local-compose.sh logs -f scheduler
+```
+
+Scheduler chỉ thực thi các task đã khai báo trong app và tới hạn chạy. Nếu chưa có scheduled task nào, service vẫn chạy mỗi phút nhưng không có job nào được kích hoạt.
 
 Ghi chú: nút test trong Hippo.Notify chạy sync để bấm là thấy kết quả ngay; các event notification thật vẫn đi qua queue.
 

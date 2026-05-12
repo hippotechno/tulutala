@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Add `scripts/local-caddy-cert.sh` to export the Caddy local root certificate and trust it in the macOS System Keychain in one step.
 - Add Windows HTTPS local certificate instructions using `Import-Certificate` and `certutil`.
+- Add a local-only `scheduler` service in `docker-compose.local.yml` to run `php artisan schedule:run` every minute.
 
 ### Changed
 
 - Ignore the generated `docker/caddy-local-root.crt` file so local cert exports do not dirty the working tree.
 - Update README local HTTPS setup instructions to use the new certificate automation script.
+- Make `docker/build-image.sh`, `scripts/release.sh`, and `scripts/release-dev.sh` automatically remove the temporary Docker Buildx builder container after build or push completes.
 
 ### Fixed
 

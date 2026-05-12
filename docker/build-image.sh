@@ -161,6 +161,12 @@ fi
 docker buildx use "$BUILDER_NAME" >/dev/null
 docker buildx inspect --bootstrap "$BUILDER_NAME" >/dev/null
 
+cleanup_buildx_builder() {
+    docker buildx stop "$BUILDER_NAME" >/dev/null 2>&1 || true
+    docker buildx rm -f "$BUILDER_NAME" >/dev/null 2>&1 || true
+}
+trap cleanup_buildx_builder EXIT
+
 log_info "==> Build image: $IMAGE_TAG"
 log_info "==> Platforms : $PLATFORMS"
 log_info "==> Include seed assets: $INCLUDE_SEED_ASSETS"
