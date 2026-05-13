@@ -33,6 +33,12 @@
     "support": {
         "source": "https://github.com/hippotechno/winter"
     },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/hippotechno/storm"
+        }
+    ],
     "require": {
         "laravel/framework": "^9.52",
         "php": "^8.3",
@@ -41,7 +47,7 @@
         "php-http/guzzle7-adapter": "^1.1",
         "tpetry/laravel-postgresql-enhanced": "*",
         "wikimedia/composer-merge-plugin": "~2.1.0",
-        "winter/storm": "1.2.12",
+        "hippo/storm": "dev-main",
         "winter/wn-translate-plugin": "2.3.2",
         "winter/wn-location-plugin": "2.2.0",
         "winter/wn-blocks-plugin": "dev-main",
@@ -88,9 +94,6 @@
         ],
         "sniff": [
             "phpcs --colors -nq --report=\"full\" --extensions=\"php\""
-        ],
-        "hippo-runner": [
-            "php plugins/hippo/core/scripts/hippo-runner.php"
         ]
     },
     "minimum-stability": "dev",

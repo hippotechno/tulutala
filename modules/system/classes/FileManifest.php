@@ -2,8 +2,6 @@
 
 use ApplicationException;
 use Config;
-use Winter\Storm\Filesystem\Filesystem;
-use Winter\Storm\Halcyon\Datasource\FileDatasource;
 
 /**
  * Stores the file manifest for this Winter CMS installation.
@@ -149,16 +147,37 @@ class FileManifest
      */
     protected function findFiles(string $basePath): array
     {
-        $datasource = new FileDatasource($basePath, new Filesystem);
-
-        $files = array_map(function ($path) use ($basePath) {
-            return $basePath . '/' . $path;
-        }, array_keys($datasource->getAvailablePaths()));
+        $files = [];
+        $this->collectFiles($basePath, $files);
 
         // Ensure files are sorted so they are in a consistent order, no matter the way the OS returns the file list.
         sort($files, SORT_NATURAL);
 
         return $files;
+    }
+
+    /**
+     * Recursively collects files under the given path.
+     */
+    protected function collectFiles(string $path, array &$files): void
+    {
+        $items = scandir($path);
+        if ($items === false) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            if ($item === '.' || $item === '..') {
+                continue;
+            }
+
+            $filePath = $path . '/' . $item;
+            if (is_dir($filePath)) {
+                $this->collectFiles($filePath, $files);
+            } elseif (is_file($filePath)) {
+                $files[] = $filePath;
+            }
+        }
     }
 
     /**

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "306f2c88b7a4dfe8d37bbc635b6df049",
+    "content-hash": "3ae24a08d5ca7f95b3dc7685a6920d0a",
     "packages": [
         {
             "name": "antwerpes/data-transfer-object",
@@ -486,26 +486,26 @@
         },
         {
             "name": "brick/varexporter",
-            "version": "0.4.0",
+            "version": "0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/brick/varexporter.git",
-                "reference": "2fd038f7c9d12d468130c6e1b3ce06e4160a7dbb"
+                "reference": "af98bfc2b702a312abbcaff37656dbe419cec5bc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/brick/varexporter/zipball/2fd038f7c9d12d468130c6e1b3ce06e4160a7dbb",
-                "reference": "2fd038f7c9d12d468130c6e1b3ce06e4160a7dbb",
+                "url": "https://api.github.com/repos/brick/varexporter/zipball/af98bfc2b702a312abbcaff37656dbe419cec5bc",
+                "reference": "af98bfc2b702a312abbcaff37656dbe419cec5bc",
                 "shasum": ""
             },
             "require": {
-                "nikic/php-parser": "^4.0",
-                "php": "^7.4 || ^8.0"
+                "nikic/php-parser": "^5.0",
+                "php": "^8.1"
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.2",
-                "phpunit/phpunit": "^8.5 || ^9.0",
-                "vimeo/psalm": "5.15.0"
+                "phpunit/phpunit": "^10.5",
+                "vimeo/psalm": "6.8.4"
             },
             "type": "library",
             "autoload": {
@@ -523,7 +523,7 @@
             ],
             "support": {
                 "issues": "https://github.com/brick/varexporter/issues",
-                "source": "https://github.com/brick/varexporter/tree/0.4.0"
+                "source": "https://github.com/brick/varexporter/tree/0.6.0"
             },
             "funding": [
                 {
@@ -531,7 +531,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2023-09-01T21:10:07+00:00"
+            "time": "2025-02-20T17:42:39+00:00"
         },
         {
             "name": "calebporzio/sushi",
@@ -2805,16 +2805,16 @@
         },
         {
             "name": "google/apiclient-services",
-            "version": "v0.440.0",
+            "version": "v0.441.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-api-php-client-services.git",
-                "reference": "f835f7a84611071ca2f58e8f44aac497d3aa7c44"
+                "reference": "9e3c10389ed39915261e5bc98a687c2b1307040d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/f835f7a84611071ca2f58e8f44aac497d3aa7c44",
-                "reference": "f835f7a84611071ca2f58e8f44aac497d3aa7c44",
+                "url": "https://api.github.com/repos/googleapis/google-api-php-client-services/zipball/9e3c10389ed39915261e5bc98a687c2b1307040d",
+                "reference": "9e3c10389ed39915261e5bc98a687c2b1307040d",
                 "shasum": ""
             },
             "require": {
@@ -2843,42 +2843,44 @@
             ],
             "support": {
                 "issues": "https://github.com/googleapis/google-api-php-client-services/issues",
-                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.440.0"
+                "source": "https://github.com/googleapis/google-api-php-client-services/tree/v0.441.0"
             },
-            "time": "2026-05-04T01:36:24+00:00"
+            "time": "2026-05-11T01:42:35+00:00"
         },
         {
             "name": "google/auth",
-            "version": "v1.44.0",
+            "version": "v1.50.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/googleapis/google-auth-library-php.git",
-                "reference": "5670e56307d7a2eac931f677c0e59a4f8abb2e43"
+                "reference": "870c17ee3a1d73338d39a9ffa77a700ba77f5a83"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/5670e56307d7a2eac931f677c0e59a4f8abb2e43",
-                "reference": "5670e56307d7a2eac931f677c0e59a4f8abb2e43",
+                "url": "https://api.github.com/repos/googleapis/google-auth-library-php/zipball/870c17ee3a1d73338d39a9ffa77a700ba77f5a83",
+                "reference": "870c17ee3a1d73338d39a9ffa77a700ba77f5a83",
                 "shasum": ""
             },
             "require": {
-                "firebase/php-jwt": "^6.0",
+                "firebase/php-jwt": "^6.0||^7.0",
                 "guzzlehttp/guzzle": "^7.4.5",
                 "guzzlehttp/psr7": "^2.4.5",
                 "php": "^8.1",
                 "psr/cache": "^2.0||^3.0",
-                "psr/http-message": "^1.1||^2.0"
+                "psr/http-message": "^1.1||^2.0",
+                "psr/log": "^2.0||^3.0"
             },
             "require-dev": {
                 "guzzlehttp/promises": "^2.0",
-                "kelvinmo/simplejwt": "0.7.1",
+                "kelvinmo/simplejwt": "^1.1.0",
                 "phpseclib/phpseclib": "^3.0.35",
                 "phpspec/prophecy-phpunit": "^2.1",
                 "phpunit/phpunit": "^9.6",
                 "sebastian/comparator": ">=1.2.3",
-                "squizlabs/php_codesniffer": "^3.5",
+                "squizlabs/php_codesniffer": "^4.0",
+                "symfony/filesystem": "^6.3||^7.3",
                 "symfony/process": "^6.0||^7.0",
-                "webmozart/assert": "^1.11"
+                "webmozart/assert": "^1.11||^2.0"
             },
             "suggest": {
                 "phpseclib/phpseclib": "May be used in place of OpenSSL for signing strings or for token management. Please require version ^2."
@@ -2894,18 +2896,18 @@
                 "Apache-2.0"
             ],
             "description": "Google Auth Library for PHP",
-            "homepage": "http://github.com/google/google-auth-library-php",
+            "homepage": "https://github.com/google/google-auth-library-php",
             "keywords": [
                 "Authentication",
                 "google",
                 "oauth2"
             ],
             "support": {
-                "docs": "https://googleapis.github.io/google-auth-library-php/main/",
+                "docs": "https://cloud.google.com/php/docs/reference/auth/latest",
                 "issues": "https://github.com/googleapis/google-auth-library-php/issues",
-                "source": "https://github.com/googleapis/google-auth-library-php/tree/v1.44.0"
+                "source": "https://github.com/googleapis/google-auth-library-php/tree/v1.50.1"
             },
-            "time": "2024-12-04T15:34:58+00:00"
+            "time": "2026-03-18T20:03:29+00:00"
         },
         {
             "name": "google/protobuf",
@@ -3522,6 +3524,138 @@
             "time": "2025-08-22T14:27:06+00:00"
         },
         {
+            "name": "hippo/storm",
+            "version": "dev-main",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/hippotechno/storm.git",
+                "reference": "31ac1cc34d5aee1fecd5208bdd35144be66bf5a0"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/hippotechno/storm/zipball/31ac1cc34d5aee1fecd5208bdd35144be66bf5a0",
+                "reference": "31ac1cc34d5aee1fecd5208bdd35144be66bf5a0",
+                "shasum": ""
+            },
+            "require": {
+                "assetic/framework": "~3.0",
+                "doctrine/dbal": "^2.6",
+                "enshrined/svg-sanitize": "~0.16",
+                "ext-ctype": "*",
+                "ext-curl": "*",
+                "ext-dom": "*",
+                "ext-fileinfo": "*",
+                "ext-gd": "*",
+                "ext-json": "*",
+                "ext-libxml": "*",
+                "ext-mbstring": "*",
+                "ext-openssl": "*",
+                "ext-pdo": "*",
+                "ext-zip": "*",
+                "laravel/framework": "^9.49",
+                "laravel/tinker": "^2.7",
+                "league/csv": "~9.1",
+                "nesbot/carbon": "^2.0",
+                "nikic/php-parser": "^5.7",
+                "php": ">=8.1",
+                "scssphp/scssphp": "~1.0",
+                "symfony/console": "^6.4",
+                "symfony/yaml": "^6.0",
+                "twig/twig": "^3.14",
+                "wikimedia/less.php": "^5.0",
+                "wikimedia/minify": "~2.2",
+                "winter/laravel-config-writer": "^1.0.1"
+            },
+            "replace": {
+                "october/rain": "self.version"
+            },
+            "require-dev": {
+                "dms/phpunit-arraysubset-asserts": "^0.5.0",
+                "larastan/larastan": "^2.8.1",
+                "meyfa/phpunit-assert-gd": "^3.0.0",
+                "mockery/mockery": "^1.4.4",
+                "orchestra/testbench": "^7.47.0",
+                "php-parallel-lint/php-parallel-lint": "^1.0",
+                "phpunit/phpunit": "^9.5.8",
+                "squizlabs/php_codesniffer": "^3.2"
+            },
+            "suggest": {
+                "ext-PDO_ODBC": "Required to use databases accessed through ODBC drivers",
+                "ext-pdo_dblib": "Required to use MS SQL Server databases",
+                "ext-pdo_mysql": "Required to use MySQL databases",
+                "ext-pdo_pgsql": "Required to use PostgreSQL databases",
+                "ext-pdo_sqlite": "Required to use SQLite databases"
+            },
+            "default-branch": true,
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "src/Support/aliases.php",
+                    "src/Support/helpers.php",
+                    "src/Router/helpers.php",
+                    "src/Html/helpers.php"
+                ],
+                "psr-4": {
+                    "Winter\\Storm\\": "src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Winter\\Storm\\Tests\\": "tests/"
+                }
+            },
+            "scripts": {
+                "test": [
+                    "./vendor/bin/phpunit ./tests"
+                ],
+                "lint": [
+                    "parallel-lint --exclude vendor ."
+                ],
+                "sniff": [
+                    "phpcs --colors -nq --report=\"full\" --extensions=\"php\""
+                ],
+                "analyze": [
+                    "phpstan analyse --memory-limit=2G src"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Alexey Bobkov",
+                    "email": "aleksey.bobkov@gmail.com",
+                    "role": "Original Author"
+                },
+                {
+                    "name": "Samuel Georges",
+                    "email": "daftspunky@gmail.com",
+                    "role": "Original Author"
+                },
+                {
+                    "name": "Luke Towers",
+                    "email": "wintercms@luketowers.ca",
+                    "role": "Lead Maintainer"
+                }
+            ],
+            "description": "A forked and updated version of the Winter CMS Storm Library by Hippo Technology",
+            "homepage": "https://tulutala.com",
+            "keywords": [
+                "cms",
+                "storm",
+                "winter"
+            ],
+            "support": {
+                "source": "https://github.com/hippotechno/storm/tree/main"
+            },
+            "time": "2026-05-12T15:18:50+00:00"
+        },
+        {
             "name": "hybridauth/hybridauth",
             "version": "v3.13.0",
             "source": {
@@ -3585,16 +3719,16 @@
         },
         {
             "name": "iconify/json",
-            "version": "2.2.471",
+            "version": "2.2.472",
             "source": {
                 "type": "git",
                 "url": "https://github.com/iconify/icon-sets.git",
-                "reference": "bd0ea21a391f33f19e87b1fb1c3e42b2423a6a2d"
+                "reference": "1b6277b793c2dccc446fa6e2cc2b39def3fb6ce7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/iconify/icon-sets/zipball/bd0ea21a391f33f19e87b1fb1c3e42b2423a6a2d",
-                "reference": "bd0ea21a391f33f19e87b1fb1c3e42b2423a6a2d",
+                "url": "https://api.github.com/repos/iconify/icon-sets/zipball/1b6277b793c2dccc446fa6e2cc2b39def3fb6ce7",
+                "reference": "1b6277b793c2dccc446fa6e2cc2b39def3fb6ce7",
                 "shasum": ""
             },
             "type": "library",
@@ -3611,9 +3745,9 @@
             "homepage": "https://iconify.design/icon-sets/",
             "support": {
                 "issues": "https://github.com/iconify/icon-sets/issues",
-                "source": "https://github.com/iconify/icon-sets/tree/2.2.471"
+                "source": "https://github.com/iconify/icon-sets/tree/2.2.472"
             },
-            "time": "2026-05-09T05:30:30+00:00"
+            "time": "2026-05-12T05:18:29+00:00"
         },
         {
             "name": "iconify/json-tools",
@@ -4159,16 +4293,16 @@
         },
         {
             "name": "laminas/laminas-servicemanager",
-            "version": "4.5.0",
+            "version": "4.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/laminas/laminas-servicemanager.git",
-                "reference": "a6996829c8ce55025cca1b57b1e8a8b165e3926c"
+                "reference": "11192d588876ad04ba2988984c77b4ecb5c771c2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/laminas/laminas-servicemanager/zipball/a6996829c8ce55025cca1b57b1e8a8b165e3926c",
-                "reference": "a6996829c8ce55025cca1b57b1e8a8b165e3926c",
+                "url": "https://api.github.com/repos/laminas/laminas-servicemanager/zipball/11192d588876ad04ba2988984c77b4ecb5c771c2",
+                "reference": "11192d588876ad04ba2988984c77b4ecb5c771c2",
                 "shasum": ""
             },
             "require": {
@@ -4232,7 +4366,7 @@
                 "chat": "https://laminas.dev/chat",
                 "forum": "https://discourse.laminas.dev",
                 "issues": "https://github.com/laminas/laminas-servicemanager/issues",
-                "source": "https://github.com/laminas/laminas-servicemanager/tree/4.5.0"
+                "source": "https://github.com/laminas/laminas-servicemanager/tree/4.5.1"
             },
             "funding": [
                 {
@@ -4240,7 +4374,7 @@
                     "type": "community_bridge"
                 }
             ],
-            "time": "2025-10-14T09:41:04+00:00"
+            "time": "2026-05-12T09:53:32+00:00"
         },
         {
             "name": "laminas/laminas-stdlib",
@@ -6874,16 +7008,16 @@
         },
         {
             "name": "nette/utils",
-            "version": "v4.1.3",
+            "version": "v4.1.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nette/utils.git",
-                "reference": "bb3ea637e3d131d72acc033cfc2746ee893349fe"
+                "reference": "7da6c396d7ebe142bc857c20479d5e70a5e1aac7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nette/utils/zipball/bb3ea637e3d131d72acc033cfc2746ee893349fe",
-                "reference": "bb3ea637e3d131d72acc033cfc2746ee893349fe",
+                "url": "https://api.github.com/repos/nette/utils/zipball/7da6c396d7ebe142bc857c20479d5e70a5e1aac7",
+                "reference": "7da6c396d7ebe142bc857c20479d5e70a5e1aac7",
                 "shasum": ""
             },
             "require": {
@@ -6959,36 +7093,43 @@
             ],
             "support": {
                 "issues": "https://github.com/nette/utils/issues",
-                "source": "https://github.com/nette/utils/tree/v4.1.3"
+                "source": "https://github.com/nette/utils/tree/v4.1.4"
             },
-            "time": "2026-02-13T03:05:33+00:00"
+            "time": "2026-05-11T20:49:54+00:00"
         },
         {
             "name": "nikic/php-parser",
-            "version": "v4.19.5",
+            "version": "v5.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "51bd93cc741b7fc3d63d20b6bdcd99fdaa359837"
+                "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/51bd93cc741b7fc3d63d20b6bdcd99fdaa359837",
-                "reference": "51bd93cc741b7fc3d63d20b6bdcd99fdaa359837",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/dca41cd15c2ac9d055ad70dbfd011130757d1f82",
+                "reference": "dca41cd15c2ac9d055ad70dbfd011130757d1f82",
                 "shasum": ""
             },
             "require": {
+                "ext-ctype": "*",
+                "ext-json": "*",
                 "ext-tokenizer": "*",
-                "php": ">=7.1"
+                "php": ">=7.4"
             },
             "require-dev": {
                 "ircmaxell/php-yacc": "^0.0.7",
-                "phpunit/phpunit": "^7.0 || ^8.0 || ^9.0"
+                "phpunit/phpunit": "^9.0"
             },
             "bin": [
                 "bin/php-parse"
             ],
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "5.x-dev"
+                }
+            },
             "autoload": {
                 "psr-4": {
                     "PhpParser\\": "lib/PhpParser"
@@ -7010,9 +7151,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v4.19.5"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v5.7.0"
             },
-            "time": "2025-12-06T11:45:25+00:00"
+            "time": "2025-12-06T11:56:16+00:00"
         },
         {
             "name": "nunomaduro/termwind",
@@ -8590,30 +8731,30 @@
         },
         {
             "name": "psr/log",
-            "version": "1.1.4",
+            "version": "3.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/php-fig/log.git",
-                "reference": "d49695b909c3b7628b6289db5479a1c204601f11"
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/php-fig/log/zipball/d49695b909c3b7628b6289db5479a1c204601f11",
-                "reference": "d49695b909c3b7628b6289db5479a1c204601f11",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
+                "reference": "f16e1d5863e37f8d8c2a01719f5b34baa2b714d3",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.0"
+                "php": ">=8.0.0"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.1.x-dev"
+                    "dev-master": "3.x-dev"
                 }
             },
             "autoload": {
                 "psr-4": {
-                    "Psr\\Log\\": "Psr/Log/"
+                    "Psr\\Log\\": "src"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -8634,9 +8775,9 @@
                 "psr-3"
             ],
             "support": {
-                "source": "https://github.com/php-fig/log/tree/1.1.4"
+                "source": "https://github.com/php-fig/log/tree/3.0.2"
             },
-            "time": "2021-05-03T11:20:27+00:00"
+            "time": "2024-09-11T13:17:53+00:00"
         },
         {
             "name": "psr/simple-cache",
@@ -13186,35 +13327,29 @@
         },
         {
             "name": "vfalies/tmdb",
-            "version": "1.12",
+            "version": "v1.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/vfalies/tmdb.git",
-                "reference": "856ecb48d8bf2e00e1c99d78936d79520b9e38f8"
+                "reference": "6985b04471831fb059850d8a09697c408f761829"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/vfalies/tmdb/zipball/856ecb48d8bf2e00e1c99d78936d79520b9e38f8",
-                "reference": "856ecb48d8bf2e00e1c99d78936d79520b9e38f8",
+                "url": "https://api.github.com/repos/vfalies/tmdb/zipball/6985b04471831fb059850d8a09697c408f761829",
+                "reference": "6985b04471831fb059850d8a09697c408f761829",
                 "shasum": ""
             },
             "require": {
-                "guzzlehttp/guzzle": ">= 6.3",
-                "php": ">= 7.1",
-                "psr/log": "~1.1.3"
+                "ext-curl": "*",
+                "php": "> 7.1"
             },
             "require-dev": {
-                "friendsofphp/php-cs-fixer": ">=2.15.3",
-                "monolog/monolog": ">1.25.1",
-                "phpunit/phpunit": ">=7.0 <9.5.4"
-            },
-            "suggest": {
-                "monolog/monolog": "Allows more advanced logging of the application flow"
+                "phpunit/phpunit": ">=4.8 < 6.0"
             },
             "type": "library",
             "autoload": {
                 "psr-4": {
-                    "VfacTmdb\\": "src/VfacTmdb"
+                    "vfalies\\tmdb\\": "src/"
                 }
             },
             "notification-url": "https://packagist.org/downloads/",
@@ -13224,17 +13359,16 @@
             "authors": [
                 {
                     "name": "Vincent Faliès",
-                    "email": "vincent@vfac.fr"
+                    "email": "vincent.falies@gmail.com"
                 }
             ],
-            "description": "A PHP Wrapper for The Internet Movie Database API",
-            "homepage": "https://vfac.fr/projects/tmdb",
+            "description": "A PHP Wrapper for The Internet Movie Database API 3",
+            "homepage": "https://github.com/vfalies/tmdb",
             "support": {
-                "email": "vincent@vfac.fr",
                 "issues": "https://github.com/vfalies/tmdb/issues",
-                "source": "https://github.com/vfalies/tmdb"
+                "source": "https://github.com/vfalies/tmdb/tree/master"
             },
-            "time": "2021-08-20T14:17:04+00:00"
+            "time": "2017-06-08T14:30:19+00:00"
         },
         {
             "name": "vlucas/phpdotenv",
@@ -13597,20 +13731,20 @@
         },
         {
             "name": "winter/laravel-config-writer",
-            "version": "v1.1.3",
+            "version": "v1.2.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wintercms/laravel-config-writer.git",
-                "reference": "f2a22aa5f9cecf1dacc88a9a0b9c0f40f9c86041"
+                "reference": "4033d0cf064ce945414ed4af8207e8dc17d1c3b4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wintercms/laravel-config-writer/zipball/f2a22aa5f9cecf1dacc88a9a0b9c0f40f9c86041",
-                "reference": "f2a22aa5f9cecf1dacc88a9a0b9c0f40f9c86041",
+                "url": "https://api.github.com/repos/wintercms/laravel-config-writer/zipball/4033d0cf064ce945414ed4af8207e8dc17d1c3b4",
+                "reference": "4033d0cf064ce945414ed4af8207e8dc17d1c3b4",
                 "shasum": ""
             },
             "require": {
-                "nikic/php-parser": "^4.10",
+                "nikic/php-parser": "^5.5",
                 "php": "^7.4.0 || ^8.0"
             },
             "require-dev": {
@@ -13630,7 +13764,7 @@
             "authors": [
                 {
                     "name": "Jack Wilkinson",
-                    "email": "me@jaxwilko.com",
+                    "email": "me@jackwilky.com",
                     "role": "Original author"
                 },
                 {
@@ -13642,7 +13776,7 @@
             "description": "Utility to create and update Laravel config and .env files",
             "support": {
                 "issues": "https://github.com/wintercms/laravel-config-writer/issues",
-                "source": "https://github.com/wintercms/laravel-config-writer/tree/v1.1.3"
+                "source": "https://github.com/wintercms/laravel-config-writer/tree/v1.2.2"
             },
             "funding": [
                 {
@@ -13654,130 +13788,7 @@
                     "type": "open_collective"
                 }
             ],
-            "time": "2024-09-24T17:41:09+00:00"
-        },
-        {
-            "name": "winter/storm",
-            "version": "v1.2.12",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/wintercms/storm.git",
-                "reference": "c390ba4f4b6085ac477562e288f8dded3447872a"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/wintercms/storm/zipball/c390ba4f4b6085ac477562e288f8dded3447872a",
-                "reference": "c390ba4f4b6085ac477562e288f8dded3447872a",
-                "shasum": ""
-            },
-            "require": {
-                "assetic/framework": "~3.0",
-                "doctrine/dbal": "^2.6",
-                "enshrined/svg-sanitize": "~0.16",
-                "ext-ctype": "*",
-                "ext-curl": "*",
-                "ext-dom": "*",
-                "ext-fileinfo": "*",
-                "ext-gd": "*",
-                "ext-json": "*",
-                "ext-libxml": "*",
-                "ext-mbstring": "*",
-                "ext-openssl": "*",
-                "ext-pdo": "*",
-                "ext-zip": "*",
-                "laravel/framework": "^9.49",
-                "laravel/tinker": "^2.7",
-                "league/csv": "~9.1",
-                "nesbot/carbon": "^2.0",
-                "nikic/php-parser": "^4.10",
-                "php": ">=8.1",
-                "scssphp/scssphp": "~1.0",
-                "symfony/console": "^6.4",
-                "symfony/yaml": "^6.0",
-                "twig/twig": "^3.14",
-                "wikimedia/less.php": "^5.0",
-                "wikimedia/minify": "~2.2",
-                "winter/laravel-config-writer": "^1.0.1"
-            },
-            "replace": {
-                "october/rain": "self.version"
-            },
-            "require-dev": {
-                "dms/phpunit-arraysubset-asserts": "^0.5.0",
-                "larastan/larastan": "^2.8.1",
-                "meyfa/phpunit-assert-gd": "^3.0.0",
-                "mockery/mockery": "^1.4.4",
-                "orchestra/testbench": "^7.47.0",
-                "php-parallel-lint/php-parallel-lint": "^1.0",
-                "phpunit/phpunit": "^9.5.8",
-                "squizlabs/php_codesniffer": "^3.2"
-            },
-            "suggest": {
-                "ext-PDO_ODBC": "Required to use databases accessed through ODBC drivers",
-                "ext-pdo_dblib": "Required to use MS SQL Server databases",
-                "ext-pdo_mysql": "Required to use MySQL databases",
-                "ext-pdo_pgsql": "Required to use PostgreSQL databases",
-                "ext-pdo_sqlite": "Required to use SQLite databases"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "1.0-dev"
-                }
-            },
-            "autoload": {
-                "files": [
-                    "src/Support/aliases.php",
-                    "src/Support/helpers.php",
-                    "src/Router/helpers.php",
-                    "src/Html/helpers.php"
-                ],
-                "psr-4": {
-                    "Winter\\Storm\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Alexey Bobkov",
-                    "email": "aleksey.bobkov@gmail.com",
-                    "role": "Original Author"
-                },
-                {
-                    "name": "Samuel Georges",
-                    "email": "daftspunky@gmail.com",
-                    "role": "Original Author"
-                },
-                {
-                    "name": "Luke Towers",
-                    "email": "wintercms@luketowers.ca",
-                    "role": "Lead Maintainer"
-                }
-            ],
-            "description": "Winter CMS Storm Library",
-            "homepage": "https://wintercms.com",
-            "keywords": [
-                "cms",
-                "storm",
-                "winter"
-            ],
-            "support": {
-                "source": "https://github.com/wintercms/storm/tree/v1.2.12"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/wintercms",
-                    "type": "github"
-                },
-                {
-                    "url": "https://opencollective.com/wintercms",
-                    "type": "open_collective"
-                }
-            ],
-            "time": "2026-02-20T20:52:05+00:00"
+            "time": "2025-12-09T18:55:49+00:00"
         },
         {
             "name": "winter/wn-blocks-plugin",
@@ -16108,6 +16119,7 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "google/recaptcha": 20,
+        "hippo/storm": 20,
         "kaythinks/eazycurl": 20,
         "khutachan/lara-file-previewer": 20,
         "winter/wn-blocks-plugin": 20

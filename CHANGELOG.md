@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add `scripts/local-caddy-cert.sh` to export the Caddy local root certificate and trust it in the macOS System Keychain in one step.
 - Add Windows HTTPS local certificate instructions using `Import-Certificate` and `certutil`.
 - Add a local-only `scheduler` service in `docker-compose.local.yml` to run `php artisan schedule:run` every minute.
+- Add a root Composer VCS repository entry for `https://github.com/hippotechno/storm` so `winter/storm` can be resolved from the private fork instead of Packagist.
+- Allow Docker build dependency stage to read `GITHUB_TOKEN` as a fallback for Composer GitHub OAuth when BuildKit secret wiring is not used.
+- Replace Composer requirement from `winter/storm` to `hippo/storm` (`dev-main`) to consume the Hippo package name directly.
+- Support both `vendor/hippo/storm` and `vendor/winter/storm` helper bootstrap paths to avoid false "Missing vendor files" errors after vendor rename.
+- Improve Storm helper bootstrap failure output with explicit `hippo/storm` guidance and attempted helper paths.
 
 ### Changed
 

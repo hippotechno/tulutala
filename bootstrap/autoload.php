@@ -13,11 +13,27 @@ define('LARAVEL_START', microtime(true));
 |
 */
 
-$helperPath = __DIR__.'/../vendor/winter/storm/src/Support/helpers.php';
+$helperPaths = [
+    __DIR__.'/../vendor/hippo/storm/src/Support/helpers.php',
+    __DIR__.'/../vendor/winter/storm/src/Support/helpers.php',
+];
 
-if (!file_exists($helperPath)) {
+$helperPath = null;
+foreach ($helperPaths as $candidatePath) {
+    if (file_exists($candidatePath)) {
+        $helperPath = $candidatePath;
+        break;
+    }
+}
+
+if ($helperPath === null) {
     header('HTTP/1.0 500 Internal Server Error');
-    echo 'Missing vendor files, try running "composer install" or use the Wizard installer.'.PHP_EOL;
+    echo 'Missing Storm helper files. Expected hippo/storm to provide vendor/hippo/storm/src/Support/helpers.php.'.PHP_EOL;
+    echo 'Tried:'.PHP_EOL;
+    foreach ($helperPaths as $candidatePath) {
+        echo ' - '.$candidatePath.PHP_EOL;
+    }
+    echo 'Run "composer install" or verify the hippo/storm package name, repository, and autoload files.'.PHP_EOL;
     exit(1);
 }
 

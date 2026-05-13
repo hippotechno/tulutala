@@ -78,6 +78,7 @@ ARG PRUNE_DEV_ARTIFACTS
 ARG BUILD_DATE
 ARG VCS_REF
 ARG IMAGE_VERSION
+ARG GITHUB_TOKEN
 
 COPY artisan composer.json composer.lock index.php .htaccess /var/www/html/
 COPY bootstrap /var/www/html/bootstrap
@@ -91,6 +92,8 @@ RUN --mount=type=secret,id=github_token,required=false set -eux; \
     token=""; \
     if [ -f /run/secrets/github_token ] && [ -s /run/secrets/github_token ]; then \
         token="$(tr -d '\r\n' < /run/secrets/github_token)"; \
+    elif [ -n "${GITHUB_TOKEN:-}" ]; then \
+        token="${GITHUB_TOKEN}"; \
     fi; \
     if [ -n "$token" ]; then \
         composer config --global --auth github-oauth.github.com "$token"; \
