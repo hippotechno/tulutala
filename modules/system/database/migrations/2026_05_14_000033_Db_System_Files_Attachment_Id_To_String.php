@@ -13,7 +13,7 @@ return new class extends Migration
         $driver = DB::connection()->getDriverName();
         $type = $this->getAttachmentIdDataType($driver);
 
-        if (!$this->isIntegerType($type)) {
+        if ($this->isStringType($type)) {
             return;
         }
 
@@ -69,10 +69,5 @@ return new class extends Migration
     protected function isStringType(?string $type): bool
     {
         return in_array($type, ['character varying', 'varchar', 'text', 'char', 'character'], true);
-    }
-
-    protected function isIntegerType(?string $type): bool
-    {
-        return in_array($type, ['smallint', 'integer', 'bigint', 'int', 'int2', 'int4', 'int8'], true);
     }
 };
