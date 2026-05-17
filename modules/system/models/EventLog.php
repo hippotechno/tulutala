@@ -1,7 +1,10 @@
 <?php namespace System\Models;
 
 use Exception;
+use Backend\Facades\BackendAuth;
+use Cms\Classes\Theme;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Config;
 use Throwable;
 use ReflectionClass;
 use Winter\Storm\Database\Model;
@@ -17,6 +20,7 @@ class EventLog extends Model
 {
     protected const EXCEPTION_LOG_VERSION = 2;
     protected const EXCEPTION_SNIPPET_LINES = 12;
+    protected const SAFE_INPUT_MAX_LENGTH = 500;
 
     /**
      * @var string The database table used by the model.
@@ -51,7 +55,10 @@ class EventLog extends Model
         $record->message = $message;
         $record->level = $level;
 
-        if ($details !== null) {
+        if ($record->shouldUseStructuredMessageDetails($level)) {
+            $record->details = $record->getMessageDetails($message, $level, $details);
+        }
+        elseif ($details !== null) {
             $record->details = (array) $details;
         }
 
@@ -116,6 +123,49 @@ class EventLog extends Model
             'logVersion' => static::EXCEPTION_LOG_VERSION,
             'exception' => $this->exceptionToArray($throwable),
             'environment' => $this->getEnviromentInfo(),
+        ];
+    }
+
+    /**
+     * Constructs the details array for non-exception error logs.
+     */
+    public function getMessageDetails(string $message, string $level, ?array $details = null): array
+    {
+        $throwable = $details['exception'] ?? null;
+
+        return [
+            'logVersion' => static::EXCEPTION_LOG_VERSION,
+            'exception' => $throwable instanceof Throwable
+                ? $this->exceptionToArray($throwable)
+                : $this->messageToExceptionArray($message, $level),
+            'environment' => $this->getEnviromentInfo(),
+            'context' => $this->normalizeLogValue((array) $details),
+        ];
+    }
+
+    /**
+     * Use the rich exception viewer for error-level log messages too.
+     */
+    protected function shouldUseStructuredMessageDetails(string $level): bool
+    {
+        return in_array(strtolower($level), ['error', 'critical', 'alert', 'emergency'], true);
+    }
+
+    /**
+     * Convert a plain log message into the exception-shaped payload used by the viewer.
+     */
+    protected function messageToExceptionArray(string $message, string $level): array
+    {
+        return [
+            'type' => ucfirst($level) . ' log message',
+            'message' => $message,
+            'file' => null,
+            'line' => null,
+            'snippet' => [],
+            'trace' => [],
+            'stringTrace' => '',
+            'code' => null,
+            'previous' => null,
         ];
     }
 
@@ -233,19 +283,407 @@ class EventLog extends Model
                 'context' => 'CLI',
                 'testing' => app()->runningUnitTests(),
                 'env' => app()->environment(),
+                'cli' => $this->getCliContextInfo(),
             ];
         }
 
         return [
             'context' => 'Web',
+            'requestId' => $this->getRequestId(),
+            'area' => $this->getRequestArea(),
             'backend' => method_exists(app(), 'runningInBackend') ? app()->runningInBackend() : false,
             'testing' => app()->runningUnitTests(),
-            'url' => \Hippo\Core\Classes\MultiSiteHelper::getCurrentUrlByMultiSite(),
+            'url' => $this->getCurrentUrl(),
+            'actualUrl' => app('request')->fullUrl(),
+            'scheme' => app('request')->getScheme(),
+            'host' => app('request')->getHost(),
+            'port' => app('request')->getPort(),
+            'path' => app('request')->path(),
+            'query' => app('request')->getQueryString(),
+            'referer' => app('request')->headers->get('referer'),
             'method' => app('request')->method(),
+            'ajax' => app('request')->ajax(),
+            'handler' => $this->getRequestHandler(),
+            'route' => $this->getRouteInfo(),
+            'actor' => $this->getActorInfo(),
+            'hippo' => $this->getHippoContextInfo(),
+            'theme' => $this->getThemeInfo(),
+            'inputKeys' => $this->getInputKeys(),
+            'safeInput' => $this->getSafeInput(),
+            'bulkAction' => $this->getBulkActionInfo(),
             'env' => app()->environment(),
             'ip' => app('request')->ip(),
             'userAgent' => app('request')->header('User-Agent'),
         ];
+    }
+
+    /**
+     * Capture or create a request correlation ID.
+     */
+    protected function getRequestId(): string
+    {
+        return app('request')->headers->get('X-Request-Id')
+            ?: app('request')->headers->get('X-Correlation-Id')
+            ?: (string) Str::uuid();
+    }
+
+    /**
+     * Resolve the current URL, preserving the local multisite override when available.
+     */
+    protected function getCurrentUrl(): string
+    {
+        if (class_exists(\Hippo\Core\Classes\MultiSiteHelper::class)) {
+            return \Hippo\Core\Classes\MultiSiteHelper::getCurrentUrlByMultiSite();
+        }
+
+        return app('request')->fullUrl();
+    }
+
+    /**
+     * Determine whether the request belongs to backend or the active CMS theme.
+     */
+    protected function getRequestArea(): string
+    {
+        if (method_exists(app(), 'runningInBackend') && app()->runningInBackend()) {
+            return 'Backend';
+        }
+
+        return 'Theme';
+    }
+
+    /**
+     * Capture the Winter AJAX handler that was executing, when present.
+     */
+    protected function getRequestHandler(): ?string
+    {
+        return app('request')->headers->get('X-WINTER-REQUEST-HANDLER')
+            ?: app('request')->headers->get('X-OCTOBER-REQUEST-HANDLER')
+            ?: app('request')->input('_handler')
+            ?: null;
+    }
+
+    /**
+     * Capture route/controller/action information for the request.
+     */
+    protected function getRouteInfo(): array
+    {
+        $route = app('router')->current();
+
+        if (!$route) {
+            return [];
+        }
+
+        return [
+            'name' => $route->getName(),
+            'action' => $route->getActionName(),
+            'controller' => $this->getRouteController($route->getActionName()),
+            'controllerAction' => $this->getRouteControllerAction($route->getActionName()),
+            'uri' => method_exists($route, 'uri') ? $route->uri() : null,
+            'parameters' => method_exists($route, 'parameters')
+                ? array_map(fn ($parameter) => $this->normalizeLogValue($parameter), $route->parameters())
+                : [],
+        ];
+    }
+
+    /**
+     * Extract a controller class from a route action string.
+     */
+    protected function getRouteController(?string $action): ?string
+    {
+        if (!$action || !str_contains($action, '@')) {
+            return null;
+        }
+
+        return Str::before($action, '@');
+    }
+
+    /**
+     * Extract a controller action method from a route action string.
+     */
+    protected function getRouteControllerAction(?string $action): ?string
+    {
+        if (!$action || !str_contains($action, '@')) {
+            return null;
+        }
+
+        return Str::after($action, '@');
+    }
+
+    /**
+     * Capture the authenticated backend or frontend actor when one exists.
+     */
+    protected function getActorInfo(): ?array
+    {
+        $actor = null;
+        $guard = null;
+
+        if (class_exists(BackendAuth::class) && ($user = BackendAuth::getUser())) {
+            $actor = $user;
+            $guard = 'backend';
+        }
+        elseif (class_exists(\Winter\User\Facades\Auth::class) && ($user = \Winter\User\Facades\Auth::getUser())) {
+            $actor = $user;
+            $guard = 'frontend';
+        }
+        elseif (class_exists(\Auth::class) && method_exists(\Auth::class, 'getUser') && ($user = \Auth::getUser())) {
+            $actor = $user;
+            $guard = 'frontend';
+        }
+
+        if (!$actor) {
+            return null;
+        }
+
+        return [
+            'guard' => $guard,
+            'id' => $actor->getKey(),
+            'login' => $actor->login ?? $actor->username ?? null,
+            'email' => $actor->email ?? null,
+            'name' => trim(($actor->first_name ?? '') . ' ' . ($actor->last_name ?? '')) ?: ($actor->name ?? null),
+            'role' => $this->getActorRoleInfo($actor),
+        ];
+    }
+
+    /**
+     * Capture a small representation of the actor's role.
+     */
+    protected function getActorRoleInfo($actor): ?array
+    {
+        try {
+            $role = $actor->role ?? null;
+        }
+        catch (Throwable $throwable) {
+            return ['error' => $throwable->getMessage()];
+        }
+
+        if (!$role) {
+            return null;
+        }
+
+        return [
+            'id' => method_exists($role, 'getKey') ? $role->getKey() : ($role->id ?? null),
+            'code' => $role->code ?? null,
+            'name' => $role->name ?? null,
+        ];
+    }
+
+    /**
+     * Capture Hippo-specific user workspace context when available.
+     */
+    protected function getHippoContextInfo(): array
+    {
+        $context = [
+            'profile' => null,
+            'space' => null,
+        ];
+
+        $user = class_exists(BackendAuth::class) ? BackendAuth::getUser() : null;
+
+        if (!$user) {
+            return $context;
+        }
+
+        $profile = null;
+        $space = null;
+
+        try {
+            if (is_callable([$user, 'getProfile'])) {
+                $profile = $user->getProfile();
+            }
+            elseif (isset($user->profile)) {
+                $profile = $user->profile;
+            }
+        }
+        catch (Throwable $throwable) {
+            $context['profile'] = ['error' => $throwable->getMessage()];
+        }
+
+        try {
+            if (is_callable([$user, 'getSpace'])) {
+                $space = $user->getSpace();
+            }
+        }
+        catch (Throwable $throwable) {
+            $context['space'] = ['error' => $throwable->getMessage()];
+        }
+
+        if (!$space && $profile) {
+            try {
+                if (is_callable([$profile, 'getSpace'])) {
+                    $space = $profile->getSpace();
+                }
+                elseif (isset($profile->space)) {
+                    $space = $profile->space;
+                }
+            }
+            catch (Throwable $throwable) {
+                $context['space'] = ['error' => $throwable->getMessage()];
+            }
+        }
+
+        if ($profile) {
+            $context['profile'] = [
+                'id' => method_exists($profile, 'getKey') ? $profile->getKey() : ($profile->id ?? null),
+                'name' => $profile->name ?? null,
+                'email' => $profile->email ?? null,
+                'space_id' => $profile->space_id ?? null,
+            ];
+        }
+
+        if ($space) {
+            $context['space'] = [
+                'id' => method_exists($space, 'getKey') ? $space->getKey() : ($space->id ?? null),
+                'name' => $space->name ?? null,
+                'code' => $space->code ?? null,
+            ];
+        }
+
+        $spaceId = app('request')->input('space_id') ?: app('request')->route('space_id');
+        if ($spaceId && empty($context['space']['id'])) {
+            $context['space'] = ['id' => $this->normalizeLogValue($spaceId)];
+        }
+
+        return $context;
+    }
+
+    /**
+     * Capture active CMS theme details, if the CMS module is available.
+     */
+    protected function getThemeInfo(): ?array
+    {
+        if (!class_exists(Theme::class)) {
+            return null;
+        }
+
+        try {
+            $theme = Theme::getActiveTheme();
+        }
+        catch (Throwable $throwable) {
+            return [
+                'code' => Config::get('cms.activeTheme'),
+                'error' => $throwable->getMessage(),
+            ];
+        }
+
+        return [
+            'code' => $theme->getDirName(),
+            'path' => $theme->getPath(),
+            'name' => $theme->getConfig()['name'] ?? null,
+        ];
+    }
+
+    /**
+     * Capture submitted field names without storing request values or secrets.
+     */
+    protected function getInputKeys(): array
+    {
+        return array_values(array_filter(array_keys(app('request')->all()), fn ($key) => is_string($key)));
+    }
+
+    /**
+     * Capture safe request values, masking sensitive keys.
+     */
+    protected function getSafeInput(): array
+    {
+        return $this->sanitizeInputArray(app('request')->all());
+    }
+
+    /**
+     * Capture common bulk-action request details.
+     */
+    protected function getBulkActionInfo(): ?array
+    {
+        $checked = app('request')->input('checked');
+
+        if (!is_array($checked)) {
+            return null;
+        }
+
+        return [
+            'checkedCount' => count($checked),
+            'checkedPreview' => array_slice(array_values($checked), 0, 20),
+        ];
+    }
+
+    /**
+     * Capture CLI command context.
+     */
+    protected function getCliContextInfo(): array
+    {
+        $argv = $_SERVER['argv'] ?? [];
+
+        return [
+            'sapi' => PHP_SAPI,
+            'command' => $argv[1] ?? null,
+            'arguments' => array_slice($argv, 2),
+            'argv' => $argv,
+            'cwd' => getcwd(),
+            'queueConnection' => Config::get('queue.default'),
+        ];
+    }
+
+    /**
+     * Recursively sanitize input values for log storage.
+     */
+    protected function sanitizeInputArray(array $input): array
+    {
+        $safe = [];
+
+        foreach ($input as $key => $value) {
+            $safe[$key] = $this->sanitizeInputValue((string) $key, $value);
+        }
+
+        return $safe;
+    }
+
+    /**
+     * Sanitize a single request input value.
+     */
+    protected function sanitizeInputValue(string $key, $value)
+    {
+        if ($this->isSensitiveInputKey($key)) {
+            return '[masked]';
+        }
+
+        if (is_array($value)) {
+            return $this->sanitizeInputArray($value);
+        }
+
+        if (is_string($value)) {
+            return Str::limit($value, static::SAFE_INPUT_MAX_LENGTH);
+        }
+
+        return $this->normalizeLogValue($value);
+    }
+
+    /**
+     * Determine if an input key should be masked.
+     */
+    protected function isSensitiveInputKey(string $key): bool
+    {
+        return (bool) preg_match('/password|passwd|pwd|token|secret|api[_-]?key|authorization|cookie|csrf|session|credential/i', $key);
+    }
+
+    /**
+     * Keep request metadata small and JSON-safe.
+     */
+    protected function normalizeLogValue($value)
+    {
+        if (is_scalar($value) || $value === null) {
+            return $value;
+        }
+
+        if (is_array($value)) {
+            return array_map(fn ($item) => $this->normalizeLogValue($item), $value);
+        }
+
+        if (is_object($value)) {
+            return method_exists($value, 'getKey')
+                ? get_class($value) . '#' . $value->getKey()
+                : get_class($value);
+        }
+
+        return gettype($value);
     }
 
     /**

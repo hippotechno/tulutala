@@ -1,5 +1,130 @@
 <?php
-if (!isset($value['logVersion']) || $value['logVersion'] !== 2) {
+$isStructuredExceptionLog = isset($value['logVersion']) && $value['logVersion'] === 2 && isset($value['exception']);
+
+if (!function_exists('eventLogValue')) {
+    function eventLogValue($value, string $empty = 'N/A'): string
+    {
+        if ($value === null || $value === '') {
+            return $empty;
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if (is_array($value)) {
+            return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
+
+        return (string) $value;
+    }
+}
+
+if (!function_exists('eventLogActorLabel')) {
+    function eventLogActorLabel(?array $actor): string
+    {
+        if (!$actor) {
+            return 'Guest / system';
+        }
+
+        $name = ($actor['name'] ?? null) ?: ($actor['email'] ?? null) ?: ($actor['login'] ?? null) ?: ('ID ' . ($actor['id'] ?? 'N/A'));
+        return sprintf('%s #%s (%s)', $name, $actor['id'] ?? 'N/A', $actor['guard'] ?? 'user');
+    }
+}
+
+if (!function_exists('eventLogFirstAppFrame')) {
+    function eventLogFirstAppFrame(array $exception): ?array
+    {
+        if (!empty($exception['trace'])) {
+            foreach ($exception['trace'] as $frame) {
+                if (!empty($frame['in_app'])) {
+                    return $frame;
+                }
+            }
+        }
+
+        return [
+            'file' => $exception['file'] ?? null,
+            'line' => $exception['line'] ?? null,
+            'class' => null,
+            'function' => null,
+        ];
+    }
+}
+
+if (!function_exists('eventLogFrameTitle')) {
+    function eventLogFrameTitle(?array $frame): string
+    {
+        if (!$frame) {
+            return 'N/A';
+        }
+
+        $call = trim(($frame['class'] ?? '') . (($frame['class'] ?? null) ? '::' : '') . ($frame['function'] ?? ''), ':');
+        $file = eventLogValue($frame['file'] ?? null);
+        $line = eventLogValue($frame['line'] ?? null);
+
+        return trim(($call ? $call . ' - ' : '') . $file . ':' . $line);
+    }
+}
+
+if (!$isStructuredExceptionLog) {
+    $recordMessage = isset($model) ? $model->message : null;
+    ?>
+    <style>
+        #winter-log-viewer-fallback {
+            background: #fff;
+            margin: -20px;
+            padding: 20px;
+        }
+        #winter-log-viewer-fallback .log-fallback-card {
+            background: #fbfcfd;
+            border: 1px solid #d7dde3;
+            border-radius: 6px;
+            margin-bottom: 14px;
+            padding: 14px;
+        }
+        #winter-log-viewer-fallback .log-fallback-title {
+            color: #33404d;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        #winter-log-viewer-fallback .log-fallback-body {
+            color: #4b5563;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+        #winter-log-viewer-fallback pre {
+            background: #f3f5f7;
+            border: 1px solid #dde3ea;
+            border-radius: 6px;
+            color: #1f2933;
+            margin: 10px 0 0;
+            max-height: 460px;
+            overflow: auto;
+            padding: 12px;
+            white-space: pre-wrap;
+        }
+    </style>
+    <div id="winter-log-viewer-fallback">
+        <div class="log-fallback-card">
+            <div class="log-fallback-title"><?= e(trans('system::lang.event_log.details.generic_log')) ?></div>
+            <div class="log-fallback-body">
+                <?= e(trans('system::lang.event_log.details.no_structured_details')) ?>
+            </div>
+        </div>
+        <?php if ($recordMessage): ?>
+            <div class="log-fallback-card">
+                <div class="log-fallback-title"><?= e(trans('system::lang.event_log.message')) ?></div>
+                <div class="log-fallback-body"><?= e($recordMessage) ?></div>
+            </div>
+        <?php endif; ?>
+        <div class="log-fallback-card">
+            <div class="log-fallback-title"><?= e(trans('system::lang.event_log.details.raw_details')) ?></div>
+            <pre><?= e(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: eventLogValue($value)) ?></pre>
+        </div>
+    </div>
+    <?php
     return;
 }
 
@@ -107,6 +232,147 @@ function getOrderedExceptionList(array $value): array
     }
     #winter-log-viewer h1 {
         margin-top: 20px;
+    }
+    #winter-log-viewer .log-dashboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+    #winter-log-viewer .log-card {
+        border: 1px solid #d7dde3;
+        border-radius: 6px;
+        background: #fbfcfd;
+        padding: 12px 14px;
+        min-height: 92px;
+    }
+    #winter-log-viewer .log-card-label {
+        color: #6a737d;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+    }
+    #winter-log-viewer .log-card-value {
+        color: #1f2933;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.4;
+        overflow-wrap: anywhere;
+    }
+    #winter-log-viewer .log-card-meta {
+        color: #5f6b76;
+        font-size: 12px;
+        line-height: 1.45;
+        margin-top: 5px;
+        overflow-wrap: anywhere;
+    }
+    #winter-log-viewer .log-section-title {
+        color: #33404d;
+        font-size: 16px;
+        font-weight: 700;
+        margin: 20px 0 10px;
+    }
+    #winter-log-viewer .log-flow {
+        border: 1px solid #d7dde3;
+        border-radius: 6px;
+        margin-bottom: 18px;
+        padding: 0;
+    }
+    #winter-log-viewer .log-flow-step {
+        display: grid;
+        grid-template-columns: 38px minmax(0, 1fr);
+        gap: 10px;
+        padding: 11px 14px;
+    }
+    #winter-log-viewer .log-flow-step:not(:last-child) {
+        border-bottom: 1px solid #e7ebef;
+    }
+    #winter-log-viewer .log-flow-step-number {
+        align-items: center;
+        background: #2f80ed;
+        border-radius: 50%;
+        color: #fff;
+        display: inline-flex;
+        font-weight: 700;
+        height: 28px;
+        justify-content: center;
+        width: 28px;
+    }
+    #winter-log-viewer .log-flow-step-title {
+        font-weight: 700;
+        overflow-wrap: anywhere;
+    }
+    #winter-log-viewer .log-flow-step-detail {
+        color: #5f6b76;
+        font-size: 12px;
+        margin-top: 3px;
+        overflow-wrap: anywhere;
+    }
+    #winter-log-viewer .log-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+    }
+    #winter-log-viewer .log-meta-panel {
+        background: #fff;
+        border: 1px solid #d7dde3;
+        border-radius: 6px;
+        padding: 12px 14px;
+    }
+    #winter-log-viewer .log-meta-title {
+        color: #6a737d;
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+    }
+    #winter-log-viewer .log-meta-panel pre {
+        background: transparent;
+        border: 0;
+        color: #1f2933;
+        font-family: monospace;
+        font-size: 12px;
+        margin: 0;
+        overflow: auto;
+        padding: 0;
+        white-space: pre-wrap;
+        word-break: break-word;
+    }
+    #winter-log-viewer .log-diagnostic-toggle {
+        background: #fbfcfd;
+        border: 1px solid #d7dde3;
+        border-radius: 6px;
+        margin-bottom: 18px;
+    }
+    #winter-log-viewer .log-diagnostic-toggle summary {
+        color: #1f2933;
+        cursor: pointer;
+        font-weight: 700;
+        list-style: none;
+        padding: 12px 14px;
+        user-select: none;
+    }
+    #winter-log-viewer .log-diagnostic-toggle summary::-webkit-details-marker {
+        display: none;
+    }
+    #winter-log-viewer .log-diagnostic-toggle summary:before {
+        content: '+';
+        color: #2f80ed;
+        display: inline-block;
+        font-weight: 700;
+        margin-right: 8px;
+        width: 12px;
+    }
+    #winter-log-viewer .log-diagnostic-toggle[open] summary {
+        border-bottom: 1px solid #d7dde3;
+    }
+    #winter-log-viewer .log-diagnostic-toggle[open] summary:before {
+        content: '-';
+    }
+    #winter-log-viewer .log-diagnostic-body {
+        padding: 12px;
     }
     #winter-log-viewer .btn[disabled] {
         color: #fff;
@@ -274,51 +540,162 @@ function getOrderedExceptionList(array $value): array
 <div id="winter-log-viewer">
     <div class="formatted">
         <div>
-            <?php if (strtolower($value['environment']['context']) === 'web'): ?>
-                <table class="table table-responsive">
-                    <tbody>
-                        <tr>
-                            <th><?= e(trans('system::lang.event_log.details.http_method')) ?></th>
-                            <td><?= e($value['environment']['method']) ?></td>
-                        </tr>
-                        <tr>
-                            <th><?= e(trans('system::lang.event_log.details.url')) ?></th>
-                            <td>
-                                <a href="<?= e($value['environment']['url']) ?>" target="_blank" rel="noopener">
-                                    <span class="wn-icon-link"></span><?= e($value['environment']['url']) ?>
-                                </a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th><?= e(trans('system::lang.event_log.details.user_agent')) ?></th>
-                            <td><?= e($value['environment']['userAgent']) ?></td>
-                        </tr>
-                        <tr>
-                            <th><?= e(trans('system::lang.event_log.details.client_ip')) ?></th>
-                            <td><?= e($value['environment']['ip']) ?></td>
-                        </tr>
-                    </tbody>
-                </table>
-            <?php endif; ?>
+            <?php
+                $environment = $value['environment'] ?? [];
+                $exception = $value['exception'] ?? [];
+                $route = $environment['route'] ?? [];
+                $actor = $environment['actor'] ?? null;
+                $hippo = $environment['hippo'] ?? [];
+                $theme = $environment['theme'] ?? null;
+                $safeInput = $environment['safeInput'] ?? [];
+                $bulkAction = $environment['bulkAction'] ?? null;
+                $cli = $environment['cli'] ?? null;
+                $firstAppFrame = eventLogFirstAppFrame($exception);
+                $isBackendArea = !empty($environment['backend']);
+                $areaLabel = $isBackendArea
+                    ? 'Backend'
+                    : eventLogValue($theme['name'] ?? $theme['code'] ?? $environment['area'] ?? null);
+                $areaMeta = !$isBackendArea && !empty($theme['name']) && !empty($theme['code']) && $theme['name'] !== $theme['code']
+                    ? $theme['code']
+                    : null;
+                $requestDiagnostics = array_filter([
+                    'requestId' => $environment['requestId'] ?? null,
+                    'ip' => $environment['ip'] ?? null,
+                    'referer' => $environment['referer'] ?? null,
+                    'userAgent' => $environment['userAgent'] ?? null,
+                    'scheme' => $environment['scheme'] ?? null,
+                    'host' => $environment['host'] ?? null,
+                    'port' => $environment['port'] ?? null,
+                ], fn ($diagnosticValue) => $diagnosticValue !== null && $diagnosticValue !== '');
+            ?>
+            <div class="log-dashboard">
+                <div class="log-card">
+                    <div class="log-card-label"><?= e(trans('system::lang.event_log.details.actor')) ?></div>
+                    <div class="log-card-value"><?= e(eventLogActorLabel($actor)) ?></div>
+                    <div class="log-card-meta">
+                        <?= e(($actor['email'] ?? null) ?: ($actor['login'] ?? null) ?: trans('system::lang.event_log.details.no_authenticated_actor')) ?>
+                        <?php if (!empty($actor['role'])): ?>
+                            <br><?= e(trans('system::lang.event_log.details.role')) ?>:
+                            <?= e(eventLogValue($actor['role']['code'] ?? $actor['role']['name'] ?? $actor['role']['id'] ?? null)) ?>
+                        <?php endif; ?>
+                        <?php if (!empty($hippo)): ?>
+                            <br><?= e(trans('system::lang.event_log.details.profile')) ?>:
+                            <?= e(eventLogValue($hippo['profile']['name'] ?? $hippo['profile']['id'] ?? null)) ?>
+                            <br><?= e(trans('system::lang.event_log.details.space')) ?>:
+                            <?= e(eventLogValue($hippo['space']['name'] ?? $hippo['space']['id'] ?? null)) ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <div class="log-card">
+                    <div class="log-card-label"><?= e(trans('system::lang.event_log.details.area_theme')) ?></div>
+                    <div class="log-card-value"><?= e($areaLabel) ?></div>
+                    <?php if (!empty($areaMeta)): ?>
+                        <div class="log-card-meta"><?= e($areaMeta) ?></div>
+                    <?php endif; ?>
+                </div>
+            </div>
 
-            <div class="btn-group" role="group" title="<?= e(trans('system::lang.event_log.details.exception_context')) ?>">
-                <button type="button" disabled class="btn btn-sm btn-secondary"><?= e(trans('system::lang.event_log.details.context')) ?></button>
-                <button type="button" disabled class="btn btn-sm btn-primary"><?= e($value['environment']['context']) ?></button>
-            </div>
-            <div class="btn-group" role="group" title="<?= e(trans('system::lang.event_log.details.exception_app_env')) ?>">
-                <button type="button" disabled class="btn btn-sm btn-secondary"><?= e(trans('system::lang.event_log.details.environment')) ?></button>
-                <button type="button" disabled class="btn btn-sm btn-primary"><?= e($value['environment']['env']) ?></button>
-            </div>
-            <?php if (strtolower($value['environment']['context']) === 'web'): ?>
-                <div class="btn-group" role="group" title="<?= e(trans('system::lang.event_log.details.exception_encountered_backend')) ?>">
-                    <button type="button" disabled class="btn btn-sm btn-secondary"><?= e(trans('system::lang.event_log.details.backend')) ?></button>
-                    <button type="button" disabled class="btn btn-sm btn-primary"><?= $value['environment']['backend'] ? 'true' : 'false' ?></button>
+            <?php if (strtolower($environment['context'] ?? '') === 'web'): ?>
+                <div class="log-section-title"><?= e(trans('system::lang.event_log.details.request_flow')) ?></div>
+                <div class="log-flow">
+                    <div class="log-flow-step">
+                        <div><span class="log-flow-step-number">1</span></div>
+                        <div>
+                            <div class="log-flow-step-title">
+                                <?= e(eventLogValue($environment['method'] ?? null)) ?>
+                                <?= e(eventLogValue($environment['actualUrl'] ?? $environment['url'] ?? null)) ?>
+                            </div>
+                            <div class="log-flow-step-detail">
+                                <?= e(trans('system::lang.event_log.details.path')) ?>:
+                                <?= e(eventLogValue($environment['path'] ?? null)) ?>
+                                <?php if (!empty($environment['query'])): ?>
+                                    ?<?= e($environment['query']) ?>
+                                <?php endif; ?>
+                                <?php if (!empty($environment['url']) && !empty($environment['actualUrl']) && $environment['url'] !== $environment['actualUrl']): ?>
+                                    <br><?= e(trans('system::lang.event_log.details.canonical_url')) ?>:
+                                    <?= e($environment['url']) ?>
+                                <?php endif; ?>
+                                <?php if (!empty($environment['host'])): ?>
+                                    <br><?= e(trans('system::lang.event_log.details.host')) ?>:
+                                    <?= e($environment['host']) ?><?= !empty($environment['port']) ? ':' . e($environment['port']) : '' ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="log-flow-step">
+                        <div><span class="log-flow-step-number">2</span></div>
+                        <div>
+                            <div class="log-flow-step-title">
+                                <?= e(eventLogValue($environment['handler'] ?? $route['action'] ?? null)) ?>
+                            </div>
+                            <div class="log-flow-step-detail">
+                                <?= e(trans('system::lang.event_log.details.ajax')) ?>:
+                                <?= e(eventLogValue($environment['ajax'] ?? null)) ?>,
+                                <?= e(trans('system::lang.event_log.details.route')) ?>:
+                                <?= e(eventLogValue($route['uri'] ?? $route['name'] ?? null)) ?>
+                                <?php if (!empty($environment['inputKeys'])): ?>
+                                    ,
+                                    <?= e(trans('system::lang.event_log.details.input_keys')) ?>:
+                                    <?= e(eventLogValue($environment['inputKeys'])) ?>
+                                <?php endif; ?>
+                                <?php if (!empty($bulkAction)): ?>
+                                    ,
+                                    <?= e(trans('system::lang.event_log.details.checked')) ?>:
+                                    <?= e(eventLogValue($bulkAction['checkedCount'] ?? null)) ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="log-flow-step">
+                        <div><span class="log-flow-step-number">3</span></div>
+                        <div>
+                            <div class="log-flow-step-title"><?= e(eventLogFrameTitle($firstAppFrame)) ?></div>
+                            <div class="log-flow-step-detail"><?= e(trans('system::lang.event_log.details.first_app_frame')) ?></div>
+                        </div>
+                    </div>
+                    <div class="log-flow-step">
+                        <div><span class="log-flow-step-number">4</span></div>
+                        <div>
+                            <div class="log-flow-step-title"><?= e(eventLogValue($exception['type'] ?? null)) ?></div>
+                            <div class="log-flow-step-detail"><?= e(eventLogValue($exception['message'] ?? null)) ?></div>
+                        </div>
+                    </div>
                 </div>
             <?php endif; ?>
-            <div class="btn-group" role="group" title="<?= e(trans('system::lang.event_log.details.exception_encountered_unit_test')) ?>">
-                <button type="button" disabled class="btn btn-sm btn-secondary"><?= e(trans('system::lang.event_log.details.testing')) ?></button>
-                <button type="button" disabled class="btn btn-sm btn-primary"><?= $value['environment']['testing'] ? 'true' : 'false' ?></button>
-            </div>
+
+            <?php if (!empty($requestDiagnostics) || !empty($safeInput) || !empty($bulkAction) || !empty($cli)): ?>
+                <details class="log-diagnostic-toggle">
+                    <summary><?= e(trans('system::lang.event_log.details.diagnostic_context')) ?></summary>
+                    <div class="log-diagnostic-body">
+                        <div class="log-meta-grid">
+                            <?php if (!empty($requestDiagnostics)): ?>
+                                <div class="log-meta-panel">
+                                    <div class="log-meta-title"><?= e(trans('system::lang.event_log.details.request_diagnostics')) ?></div>
+                                    <pre><?= e(json_encode($requestDiagnostics, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?></pre>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($safeInput)): ?>
+                                <div class="log-meta-panel">
+                                    <div class="log-meta-title"><?= e(trans('system::lang.event_log.details.safe_input')) ?></div>
+                                    <pre><?= e(json_encode($safeInput, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?></pre>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($bulkAction)): ?>
+                                <div class="log-meta-panel">
+                                    <div class="log-meta-title"><?= e(trans('system::lang.event_log.details.bulk_action')) ?></div>
+                                    <pre><?= e(json_encode($bulkAction, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?></pre>
+                                </div>
+                            <?php endif; ?>
+                            <?php if (!empty($cli)): ?>
+                                <div class="log-meta-panel">
+                                    <div class="log-meta-title"><?= e(trans('system::lang.event_log.details.cli_queue')) ?></div>
+                                    <pre><?= e(json_encode($cli, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)) ?></pre>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </details>
+            <?php endif; ?>
 
             <hr>
 
