@@ -13,7 +13,6 @@ use Winter\Storm\Exception\ApplicationException;
 use Winter\Storm\Exception\SystemException;
 use Winter\Storm\Halcyon\Datasource\DatasourceInterface;
 use Winter\Storm\Halcyon\Datasource\DbDatasource;
-use Winter\Storm\Halcyon\Datasource\FileDatasource;
 use Winter\Storm\Support\Facades\Config;
 use Winter\Storm\Support\Facades\Event;
 use Winter\Storm\Support\Facades\File;
@@ -365,7 +364,7 @@ class Theme extends CmsObject
 
         // Attempt to load the theme's config file from whatever datasources are available.
         $sources = [
-            'filesystem' => new FileDatasource(themes_path($this->getDirName()), App::make('files'))
+            'filesystem' => new ThemeFileDatasource(themes_path($this->getDirName()), App::make('files'))
         ];
         if (static::databaseLayerEnabled()) {
             $sources['database'] = new DbDatasource($this->getDirName(), 'cms_theme_templates');
@@ -651,7 +650,7 @@ class Theme extends CmsObject
             $sources['database'] = new DbDatasource($this->dirName, 'cms_theme_templates');
         }
 
-        $sources['filesystem'] = new FileDatasource($this->getPath(), App::make('files'));
+        $sources['filesystem'] = new ThemeFileDatasource($this->getPath(), App::make('files'));
 
         $config = $this->getConfig();
         if (!empty($config['parent'])) {
@@ -659,7 +658,7 @@ class Theme extends CmsObject
                 $sources['parent-database'] = new DbDatasource($config['parent'], 'cms_theme_templates');
             }
 
-            $sources['parent-filesystem'] = new FileDatasource(themes_path($config['parent']), App::make('files'));
+            $sources['parent-filesystem'] = new ThemeFileDatasource(themes_path($config['parent']), App::make('files'));
         }
 
         $datasource = count($sources) > 1

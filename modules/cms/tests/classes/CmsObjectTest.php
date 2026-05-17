@@ -5,6 +5,8 @@ namespace Cms\Tests\Classes;
 use System\Tests\Bootstrap\TestCase;
 use Cms\Classes\CmsObject;
 use Cms\Classes\Theme;
+use Cms\Classes\ThemeFileDatasource;
+use Winter\Storm\Filesystem\Filesystem;
 
 class TestCmsObject extends CmsObject
 {
@@ -122,6 +124,18 @@ class CmsObjectTest extends TestCase
         CmsObject::clearInternalCache();
         $obj = TestTemporaryCmsObject::loadCached($theme, 'test.htm');
         $this->assertNull($obj);
+    }
+
+    public function testThemeFileDatasourceCacheKeyIsScopedToThemePath()
+    {
+        $files = new Filesystem;
+        $firstTheme = new ThemeFileDatasource('/themes/first-theme', $files);
+        $secondTheme = new ThemeFileDatasource('/themes/second-theme', $files);
+
+        $this->assertNotEquals(
+            $firstTheme->makeCacheKey('a:2:{i:0;s:11:"site/header";i:1;s:3:"htm";}'),
+            $secondTheme->makeCacheKey('a:2:{i:0;s:11:"site/header";i:1;s:3:"htm";}')
+        );
     }
 
     public function testFillFillable()
