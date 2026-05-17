@@ -17,7 +17,7 @@ return [
     |
     */
 
-    'activeTheme' => 'demo',
+    'activeTheme' => 'hippo-theme-default',
 
     /*
     |--------------------------------------------------------------------------

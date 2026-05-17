@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rename the CoreService feature flag examples in `.env.example` to `HIP_CORE_SYNC_ENABLED` and `HIP_CORE_FALLBACK_LOGIN_ENABLED`.
 - Ignore the generated `docker/caddy-local-root.crt` file so local cert exports do not dirty the working tree.
 - Update README local HTTPS setup instructions to use the new certificate automation script.
 - Make `docker/build-image.sh`, `scripts/release.sh`, and `scripts/release-dev.sh` automatically remove the temporary Docker Buildx builder container after build or push completes.
