@@ -579,6 +579,7 @@ class RelationController extends ControllerBehavior
         }
 
         $filterConfig = $this->makeConfig($this->getConfig($type . '[filter]'));
+        $filterConfig->model = $this->relationModel;
         $filterConfig->alias = $this->alias . ucfirst($type) . 'Filter';
         $filterWidget = $this->makeWidget('Backend\Widgets\Filter', $filterConfig);
 

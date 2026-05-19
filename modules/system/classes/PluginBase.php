@@ -236,6 +236,22 @@ class PluginBase extends ServiceProviderBase
     }
 
     /**
+     * Registers any filter widgets implemented in this plugin.
+     * The widgets must be returned in the following format:
+     *
+     *     return [
+     *         ['className1' => 'alias'],
+     *         ['className2' => 'anotherAlias']
+     *     ];
+     *
+     * @return array
+     */
+    public function registerFilterWidgets()
+    {
+        return [];
+    }
+
+    /**
      * Registers custom back-end list column types introduced by this plugin.
      *
      * @return array

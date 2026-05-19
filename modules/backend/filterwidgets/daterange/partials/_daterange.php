@@ -1,10 +1,9 @@
-<!-- Date Range scope -->
 <a
     class="filter-scope-date filter-has-popover range <?= isset($after) || isset($before) ? 'active' : '' ?>"
     href="javascript:;"
-    data-scope-name="<?= $scope->scopeName ?>"
+    data-scope-name="<?= e($scope->scopeName) ?>"
     data-scope-data="<?= e(json_encode([
-        'dates' =>  [isset($after) ? $after : null, isset($before) ? $before : null],
+        'dates' => [isset($after) ? $after : null, isset($before) ? $before : null],
         'minDate' => $scope->minDate,
         'maxDate' => $scope->maxDate,
         'firstDay' => $scope->firstDay,

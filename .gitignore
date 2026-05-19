@@ -12,6 +12,7 @@ docker/.env.local
 selenium.php
 /bootstrap/compiled.php
 .phpunit.result.cache
+temp
 
 # Hosting ignores
 php_errors.log

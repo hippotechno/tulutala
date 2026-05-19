@@ -269,6 +269,19 @@ class ServiceProvider extends ModuleServiceProvider
             $manager->registerFormWidget(\Backend\FormWidgets\Sensitive::class, 'sensitive');
             $manager->registerFormWidget(\Backend\FormWidgets\TagList::class, 'taglist');
         });
+
+        WidgetManager::instance()->registerFilterWidgets(function ($manager) {
+            $manager->registerFilterWidget(\Backend\FilterWidgets\ButtonGroup::class, 'button-group');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\Checkbox::class, 'checkbox');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\Date::class, 'date');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\DateRange::class, 'daterange');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\Dropdown::class, 'dropdown');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\Group::class, 'group');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\Number::class, 'number');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\NumberRange::class, 'numberrange');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\SwitchFilter::class, 'switch');
+            $manager->registerFilterWidget(\Backend\FilterWidgets\Text::class, 'text');
+        });
     }
 
     /*

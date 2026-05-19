@@ -5,10 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.10]
+## [1.1.0]
 
 ### Added
 
+- Add backend filter widget registration support with `FilterWidgetBase`, `WidgetManager` filter widget registry methods, and custom filter widget rendering, value capture, and query application in `Backend\Widgets\Filter`.
+- Add the default `PluginBase::registerFilterWidgets()` hook so plugins can register backend filter widgets.
+- Add built-in backend filter widgets for `text`, `number`, `date`, `group`, `checkbox`, `switch`, `dropdown`, `button-group`, `daterange`, and `numberrange` scopes under `modules/backend/filterwidgets`.
+- Add shared filter widget helpers for option resolution and default option-style query application.
+- Add `displayValues` support to group filter widgets for showing active option titles, keys, or counts, defaulting to titles.
+- Add backend filter widget documentation covering usage, registration, lifecycle, built-in widgets, model scopes, group options, and troubleshooting.
 - Add `scripts/local-caddy-cert.sh` to export the Caddy local root certificate and trust it in the macOS System Keychain in one step.
 - Add Windows HTTPS local certificate instructions using `Import-Certificate` and `certutil`.
 - Add a local-only `scheduler` service in `docker-compose.local.yml` to run `php artisan schedule:run` every minute.
@@ -20,6 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rename the filter scope widget factory to avoid colliding with relation controller filter widget creation.
+- Translate built-in filter widget labels through their configured language keys.
+- Keep number filter widgets in single-value mode by default, only showing condition controls when multiple conditions are explicitly configured.
+- Update number filter widget headers to show the active numeric value instead of a count.
+- Restore the group filter widget popup markup to match the legacy group filter interface instead of rendering checkbox rows.
+- Remove legacy filter scope partial rendering so every filter scope UI must resolve through a registered filter widget alias.
+- Update the Storm UI filter control to load custom filter widget forms and apply inline/custom filter widget values.
+- Add legacy-style item movement and local search handling for custom group filter widget popovers.
+- Update local Docker app domain from `tulutala-local.test` to `tulutala-local.localtest.me` in `.env` (`APP_URL`, `APP_DOMAIN`) so Google OAuth accepts the origin as a public-suffix domain.
 - Rename the CoreService feature flag examples in `.env.example` to `HIP_CORE_SYNC_ENABLED` and `HIP_CORE_FALLBACK_LOGIN_ENABLED`.
 - Ignore the generated `docker/caddy-local-root.crt` file so local cert exports do not dirty the working tree.
 - Update README local HTTPS setup instructions to use the new certificate automation script.
@@ -27,6 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix built-in group filter widgets so option methods are called on the configured filter model after scope model resolution.
+- Skip legacy group option validation for group scopes handled by registered filter widgets.
+- Fix custom filter widget scope detection so number/text/date widgets are not handled by the legacy group popover before widget instances are created.
+- Fix registered filter widget AJAX updates so built-in type names like `number` use the filter widget payload instead of the legacy scope payload.
+- Return custom filter widget active state metadata from AJAX updates so number filter headers refresh without reloading the page.
+- Make the group filter widget active label resolver public so AJAX updates can refresh group filter headers after applying.
+- Clear dependent filter scope session values on the server when a parent scope changes so list queries and UI state stay aligned.
+- Trigger dependent filter scope change events after AJAX dependency refreshes so nested dependencies such as state, city, and ward clear in sequence.
+- Link filter widgets to list widgets when registered as list filters, allowing filters without an explicit model to fall back to the attached list widget model.
+- Prevent the legacy group filter popover handler from running against custom filter widget popovers.
 - Missing `aws/aws-sdk-php` and `league/flysystem-aws-s3-v3` package for supporting S3 FileSystem.
 
 ## [1.0.9]

@@ -42,6 +42,16 @@ class FilterScope
     public $value;
 
     /**
+     * @var mixed Filter scope value used by filter widgets.
+     */
+    public $scopeValue;
+
+    /**
+     * @var string Model attribute to get/set value from.
+     */
+    public $valueFrom;
+
+    /**
      * @var string Filter mode.
      */
     public $type = 'group';
@@ -50,6 +60,78 @@ class FilterScope
      * @var string Filter options.
      */
     public $options;
+
+    /**
+     * @var string|array|mixed Default filter value.
+     */
+    public $default;
+
+    /**
+     * @var string Filter condition.
+     */
+    public $condition;
+
+    /**
+     * @var string|array Raw SQL conditions or condition map.
+     */
+    public $conditions;
+
+    /**
+     * @var string Model scope method to use when applying this filter scope.
+     */
+    public $modelScope;
+
+    /**
+     * @var string Model method used to retrieve filter options.
+     */
+    public $optionsMethod;
+
+    /**
+     * @var string Model scope method used to constrain option queries.
+     */
+    public $optionsScope;
+
+    /**
+     * @var string Empty option label.
+     */
+    public $emptyOption;
+
+    /**
+     * @var string Display style for active group scope values: title, key, or count.
+     */
+    public $displayValues = 'title';
+
+    /**
+     * @var string Group match mode: include, exclude, or toggle.
+     */
+    public $matchMode = 'include';
+
+    /**
+     * @var string Active group match mode.
+     */
+    public $mode = 'include';
+
+    /**
+     * @var mixed Number/date helper values for filter widgets.
+     */
+    public $min;
+    public $max;
+    public $after;
+    public $before;
+    public $valueRaw;
+    public $afterRaw;
+    public $beforeRaw;
+
+    /**
+     * @var string Date picker configuration.
+     */
+    public $minDate;
+    public $maxDate;
+    public $firstDay;
+    public $yearRange;
+    public $showWeekNumber = false;
+    public $useTimezone;
+    public $ignoreTimezone = false;
 
     /**
      * @var array Other scope names this scope depends on, when the other scopes are modified, this scope will update.
@@ -70,11 +152,6 @@ class FilterScope
      * @var string Specifies a default value for supported scopes.
      */
     public $defaults;
-
-    /**
-     * @var string Raw SQL conditions to use when applying this scope.
-     */
-    public $conditions;
 
     /**
      * @var string Model scope method to use when applying this filter scope.
@@ -127,15 +204,31 @@ class FilterScope
          */
         $applyConfigValues = [
             'options',
+            'optionsMethod',
+            'optionsScope',
+            'emptyOption',
+            'displayValues',
             'dependsOn',
             'context',
             'default',
+            'valueFrom',
             'conditions',
+            'condition',
+            'modelScope',
             'scope',
             'cssClass',
             'nameFrom',
             'descriptionFrom',
             'disabled',
+            'matchMode',
+            'mode',
+            'minDate',
+            'maxDate',
+            'firstDay',
+            'yearRange',
+            'showWeekNumber',
+            'useTimezone',
+            'ignoreTimezone',
         ];
 
         foreach ($applyConfigValues as $value) {
@@ -164,5 +257,30 @@ class FilterScope
         }
 
         return HtmlHelper::nameToId($id);
+    }
+
+    /**
+     * Returns a HTML array compatible scope name.
+     */
+    public function getName()
+    {
+        return 'Filter[' . $this->scopeName . ']';
+    }
+
+    /**
+     * Applies a loaded value to this scope and expands array values to properties.
+     */
+    public function setScopeValue($value)
+    {
+        $this->scopeValue = $value;
+        $this->value = $value;
+
+        if (is_array($value)) {
+            foreach ($value as $key => $_value) {
+                $this->{$key} = $_value;
+            }
+        }
+
+        return $this;
     }
 }

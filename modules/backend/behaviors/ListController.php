@@ -239,6 +239,7 @@ class ListController extends ControllerBehavior
 
             $widget->cssClasses[] = 'list-flush';
 
+            $filterConfig->model = $model;
             $filterConfig->alias = $widget->alias . 'Filter';
             $filterWidget = $this->makeWidget(\Backend\Widgets\Filter::class, $filterConfig);
             $filterWidget->bindToController();

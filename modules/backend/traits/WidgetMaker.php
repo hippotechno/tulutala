@@ -2,6 +2,7 @@
 
 use Lang;
 use Backend\Classes\FormField;
+use Backend\Classes\FilterScope;
 use SystemException;
 
 /**
@@ -71,5 +72,42 @@ trait WidgetMaker
         }
 
         return new $class($controller, $formField, $widgetConfig);
+    }
+
+    /**
+     * Makes a filter widget object with the supplied filter scope and widget configuration.
+     * @param string $class Widget class name
+     * @param mixed $scopeConfig A scope name, an array of config or a FilterScope object.
+     * @param array $widgetConfig An array of config.
+     * @return \Backend\Classes\FilterWidgetBase The widget object
+     */
+    public function makeFilterScopeWidget($class, $scopeConfig = [], $widgetConfig = [])
+    {
+        $controller = property_exists($this, 'controller') && $this->controller
+            ? $this->controller
+            : $this;
+
+        if (!class_exists($class)) {
+            throw new SystemException(Lang::get('backend::lang.widget.not_registered', [
+                'name' => $class
+            ]));
+        }
+
+        if (is_string($scopeConfig)) {
+            $scopeConfig = ['name' => $scopeConfig];
+        }
+
+        if (is_array($scopeConfig)) {
+            $filterScope = new FilterScope(
+                array_get($scopeConfig, 'name'),
+                array_get($scopeConfig, 'label')
+            );
+            $filterScope->displayAs('widget', $scopeConfig);
+        }
+        else {
+            $filterScope = $scopeConfig;
+        }
+
+        return new $class($controller, $filterScope, $widgetConfig);
     }
 }

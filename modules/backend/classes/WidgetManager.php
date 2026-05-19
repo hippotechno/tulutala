@@ -32,6 +32,21 @@ class WidgetManager
     protected $formWidgetHints;
 
     /**
+     * @var array An array of filter widgets. Stored in the form of ['FilterWidgetClass' => $filterWidgetInfo].
+     */
+    protected $filterWidgets;
+
+    /**
+     * @var array Cache of filter widget registration callbacks.
+     */
+    protected $filterWidgetCallbacks = [];
+
+    /**
+     * @var array An array of filter widgets keyed by their code. Stored in the form of ['filterwidgetcode' => 'FilterWidgetClass'].
+     */
+    protected $filterWidgetHints;
+
+    /**
      * @var array An array of report widgets.
      */
     protected $reportWidgets;
@@ -148,6 +163,105 @@ class WidgetManager
 
         $_name = Str::normalizeClassName($name);
         if (isset($this->formWidgets[$_name])) {
+            return $_name;
+        }
+
+        return $name;
+    }
+
+    //
+    // Filter Widgets
+    //
+
+    /**
+     * Returns a list of registered filter widgets.
+     * @return array Array keys are class names.
+     */
+    public function listFilterWidgets()
+    {
+        if ($this->filterWidgets === null) {
+            $this->filterWidgets = [];
+
+            /*
+             * Load module widgets
+             */
+            foreach ($this->filterWidgetCallbacks as $callback) {
+                $callback($this);
+            }
+
+            /*
+             * Load plugin widgets
+             */
+            $plugins = $this->pluginManager->getPlugins();
+
+            foreach ($plugins as $plugin) {
+                if (!is_array($widgets = $plugin->registerFilterWidgets())) {
+                    continue;
+                }
+
+                foreach ($widgets as $className => $widgetInfo) {
+                    $this->registerFilterWidget($className, $widgetInfo);
+                }
+            }
+        }
+
+        return $this->filterWidgets;
+    }
+
+    /**
+     * Registers a single filter widget.
+     * @param string $className Widget class name.
+     * @param array|string|null $widgetInfo Registration information, can contain a `code` key.
+     * @return void
+     */
+    public function registerFilterWidget($className, $widgetInfo = null)
+    {
+        if (!is_array($widgetInfo)) {
+            $widgetInfo = ['code' => $widgetInfo];
+        }
+
+        $widgetCode = $widgetInfo['code'] ?? null;
+
+        if (!$widgetCode) {
+            $widgetCode = Str::getClassId($className);
+        }
+
+        $this->filterWidgets[$className] = $widgetInfo;
+        $this->filterWidgetHints[$widgetCode] = $className;
+    }
+
+    /**
+     * Manually registers filter widgets for consideration. Usage:
+     *
+     *     WidgetManager::registerFilterWidgets(function ($manager) {
+     *         $manager->registerFilterWidget('Backend\FilterWidgets\Text', 'text');
+     *     });
+     *
+     */
+    public function registerFilterWidgets(callable $definitions)
+    {
+        $this->filterWidgetCallbacks[] = $definitions;
+    }
+
+    /**
+     * Returns a class name from a filter widget code.
+     * @param string $name Class name or filter widget code.
+     * @return string The class name resolved, or the original name.
+     */
+    public function resolveFilterWidget($name)
+    {
+        if ($this->filterWidgets === null) {
+            $this->listFilterWidgets();
+        }
+
+        $hints = $this->filterWidgetHints;
+
+        if (isset($hints[$name])) {
+            return $hints[$name];
+        }
+
+        $_name = Str::normalizeClassName($name);
+        if (isset($this->filterWidgets[$_name])) {
             return $_name;
         }
 

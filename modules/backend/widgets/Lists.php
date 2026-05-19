@@ -1643,6 +1643,10 @@ class Lists extends WidgetBase
 
     public function addFilter(callable $filter)
     {
+        if (is_array($filter) && ($filter[0] ?? null) instanceof Filter) {
+            $filter[0]->setListWidget($this);
+        }
+
         $this->filterCallbacks[] = $filter;
     }
 

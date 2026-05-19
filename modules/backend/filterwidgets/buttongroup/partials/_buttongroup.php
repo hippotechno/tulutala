@@ -3,12 +3,12 @@
     data-scope-name="<?= e($scope->scopeName) ?>"
     <?= ($scope->config['required'] ?? false) ? 'data-scope-required="true"' : '' ?>
 >
-    <?php foreach ($scope->options as $key => $label): ?>
+    <?php foreach ($options as $key => $label): ?>
         <button
             class="btn <?= $scope->value === $key ? 'btn-primary' : 'btn-default' ?>"
             data-scope-name="<?= e($scope->scopeName) ?>"
             data-scope-value="<?= e($key) ?>">
-            <?= e($label) ?>
+            <?= e(trans($label)) ?>
         </button>
     <?php endforeach ?>
 </div>

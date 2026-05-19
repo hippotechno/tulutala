@@ -38,6 +38,8 @@
     }
 
     FilterWidget.DEFAULTS = {
+        customFilterWidgets: [],
+        renderHandler: null,
         optionsHandler: null,
         updateHandler: null
     }
@@ -118,6 +120,16 @@
             var $scope = $(this),
                 scopeName = $scope.data('scope-name')
 
+            if (self.isCustomScope(scopeName)) {
+                if ($scope.hasClass('filter-scope-open')) return
+
+                self.$activeScope = $scope
+                self.activeScopeName = self.normalizeScopeName(scopeName)
+                self.displayCustomPopover($scope)
+                $scope.addClass('filter-scope-open')
+                return
+            }
+
             // Second click closes the filter scope
             if ($scope.hasClass('filter-scope-open')) return
 
@@ -130,6 +142,10 @@
 
         // Setup event handlers on type: group scopes' controls
         this.$el.on('show.oc.popover', 'a.filter-scope', function(event){
+            if (self.isCustomScope($(this).data('scope-name'))) {
+                return
+            }
+
             self.focusSearch()
 
             $(event.relatedTarget).on('click', '#controlFilterPopover .filter-items > ul > li', function(){
@@ -159,10 +175,44 @@
             })
         })
 
+        // Setup event handlers on custom filter scopes' controls
+        this.$el.on('show.oc.popover', 'a.filter-scope', function(event){
+            var $scope = $(this),
+                scopeName = $scope.data('scope-name')
+
+            if (!self.isCustomScope(scopeName)) {
+                return
+            }
+
+            $(event.relatedTarget).on('click', '#controlFilterPopover .filter-items > ul > li', function(){
+                self.selectCustomItem($(this))
+            })
+
+            $(event.relatedTarget).on('click', '#controlFilterPopover .filter-active-items > ul > li', function(){
+                self.selectCustomItem($(this), true)
+            })
+
+            $(event.relatedTarget).on('input', '#controlFilterPopover input[data-search]', function(){
+                self.searchCustomItems($(this))
+            })
+
+            $(event.relatedTarget).on('click', '[data-filter-action="apply"]', function (e) {
+                e.preventDefault()
+                self.filterCustomScope(false, $(event.relatedTarget))
+            })
+
+            $(event.relatedTarget).on('click', '[data-filter-action="clear"]', function (e) {
+                e.preventDefault()
+                self.filterCustomScope(true, $(event.relatedTarget))
+            })
+        })
+
         // Setup event handler to apply selected options when closing the type: group scope popup
         this.$el.on('hide.oc.popover', 'a.filter-scope', function(){
             var $scope = $(this)
-            self.pushOptions(self.activeScopeName)
+            if (!self.isCustomScope($scope.data('scope-name'))) {
+                self.pushOptions(self.activeScopeName)
+            }
             self.activeScopeName = null
             self.$activeScope = null
 
@@ -233,6 +283,21 @@
                 })
             }
         }.bind(this))
+
+        // Setup click handler on inline custom filter scopes
+        this.$el.on('click', '.filter-scope.scope-inline [data-filter-action="apply"]', function (e) {
+            var $scope = $(e.target).closest('.filter-scope'),
+                scopeName = $scope.data('scope-name')
+
+            if (!this.isCustomScope(scopeName)) {
+                return
+            }
+
+            e.preventDefault()
+            this.$activeScope = $scope
+            this.activeScopeName = this.normalizeScopeName(scopeName)
+            this.filterCustomScope(false, $scope)
+        }.bind(this))
     }
 
     /*
@@ -298,6 +363,7 @@
                         self.fillOptions(dependantScope, data.options)
                         self.updateScopeSetting($scope, data.options.active.length)
                         $scope.loadIndicator('hide')
+                        $scope.trigger('change.oc.filterScope')
                     }
                 })
             })
@@ -425,6 +491,39 @@
         if (!isLoaded) {
             self.loadOptions(scopeName)
         }
+    }
+
+    FilterWidget.prototype.displayCustomPopover = function($scope) {
+        var self = this,
+            scopeName = this.normalizeScopeName($scope.data('scope-name')),
+            container = false
+
+        if (!this.options.renderHandler) {
+            return
+        }
+
+        var modalParent = $scope.parents('.modal-dialog')
+        if (modalParent.length > 0) {
+            container = modalParent[0]
+        }
+
+        $.wn.stripeLoadIndicator.show()
+        this.$el.request(this.options.renderHandler, {
+            data: { scopeName: scopeName },
+            success: function(data) {
+                $scope.data('oc.popover', null)
+                $scope.ocPopover({
+                    content: data.html,
+                    modal: false,
+                    highlightModalTarget: true,
+                    closeOnPageClick: true,
+                    placement: 'bottom',
+                    container: container
+                })
+            }
+        }).always(function () {
+            $.wn.stripeLoadIndicator.hide()
+        })
     }
 
     /*
@@ -623,6 +722,101 @@
         this.pushOptions(scopeName)
         this.isActiveScopeDirty = false
         this.$activeScope.data('oc.popover').hide()
+    }
+
+    FilterWidget.prototype.filterCustomScope = function (isReset, $container) {
+        if (!this.options.updateHandler) {
+            return
+        }
+
+        var self = this,
+            data = {
+                scopeName: this.activeScopeName
+            }
+
+        $.each($container.find(':input').serializeArray(), function(index, field) {
+            data[field.name] = field.value
+        })
+
+        if ($container.find('.filter-active-items').length) {
+            data['Filter[value]'] = this.getCustomActiveValues($container)
+        }
+
+        if (isReset) {
+            data.clearScope = 1
+        }
+
+        $.wn.stripeLoadIndicator.show()
+        this.$el.request(this.options.updateHandler, {
+            data: data
+        }).always(function () {
+            $.wn.stripeLoadIndicator.hide()
+        }).done(function (data) {
+            if (data && data.scopeActiveLabel !== undefined) {
+                var $scope = self.$activeScope || self.$el.find('[data-scope-name="'+data.scopeName+'"]')
+
+                $scope
+                    .toggleClass('active', !!data.scopeIsActive)
+                    .find('.filter-setting')
+                    .text(data.scopeActiveLabel)
+            }
+
+            self.$el.find('[data-scope-name="'+self.activeScopeName+'"]').trigger('change.oc.filterScope')
+            self.$el.find('[data-scope-name="Filter['+self.activeScopeName+']"]').trigger('change.oc.filterScope')
+
+            if (self.$activeScope && self.$activeScope.data('oc.popover')) {
+                self.$activeScope.data('oc.popover').hide()
+            }
+        })
+    }
+
+    FilterWidget.prototype.selectCustomItem = function($item, isDeselect) {
+        var $otherContainer = isDeselect
+            ? $item.closest('.control-filter-popover').find('.filter-items:first > ul')
+            : $item.closest('.control-filter-popover').find('.filter-active-items:first > ul')
+
+        $item
+            .addClass('animate-enter')
+            .prependTo($otherContainer)
+            .one('webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend', function(){
+                $(this).removeClass('animate-enter')
+            })
+
+        this.toggleFilterButtons(this.getCustomActiveValues($item.closest('.control-filter-popover')))
+    }
+
+    FilterWidget.prototype.getCustomActiveValues = function($container) {
+        var values = []
+
+        $container.find('.filter-active-items > ul > li').each(function() {
+            values.push($(this).data('item-id'))
+        })
+
+        return values
+    }
+
+    FilterWidget.prototype.searchCustomItems = function($input) {
+        var query = ($input.val() || '').toLowerCase()
+
+        $input
+            .closest('.control-filter-popover')
+            .find('.filter-items > ul > li')
+            .each(function() {
+                var $item = $(this)
+                $item.toggle($item.text().toLowerCase().indexOf(query) !== -1)
+            })
+    }
+
+    FilterWidget.prototype.isCustomScope = function(scopeName) {
+        scopeName = this.normalizeScopeName(scopeName)
+
+        return $.inArray(scopeName, this.options.customFilterWidgets || []) !== -1
+    }
+
+    FilterWidget.prototype.normalizeScopeName = function(scopeName) {
+        var matches = /^Filter\[([^\]]+)\]$/.exec(scopeName)
+
+        return matches ? matches[1] : scopeName
     }
 
     FilterWidget.prototype.getLang = function(name, defaultValue) {
