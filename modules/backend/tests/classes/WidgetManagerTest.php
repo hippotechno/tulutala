@@ -287,6 +287,94 @@ class WidgetManagerTest extends TestCase
         $this->assertNull($filter->getScopeValue('city'));
     }
 
+    public function testGroupFilterWidgetCanApplyExcludeMode()
+    {
+        WidgetManager::instance()->registerFilterWidget(Group::class, 'group');
+
+        $filter = $this->createFilterWithScope('state', [
+            'type' => 'group',
+            'label' => 'State',
+            'matchMode' => 'exclude',
+            'options' => [
+                1 => 'State 1',
+                2 => 'State 2',
+            ],
+        ]);
+        $filter->render();
+
+        Request::swap(HttpRequest::create('/', 'POST', [
+            'scopeName' => 'state',
+            'Filter' => [
+                'mode' => 'include',
+                'value' => [1, 2],
+            ],
+        ]));
+        $filter->onFilterUpdate();
+
+        $scope = $filter->getScope('state');
+        $this->assertSame('exclude', $scope->mode);
+
+        $query = new class {
+            public $whereNotIns = [];
+
+            public function whereNotIn($column, $values)
+            {
+                $this->whereNotIns[] = [$column, $values];
+            }
+        };
+
+        $filter->applyScopeToQuery($scope, $query);
+
+        $this->assertSame([
+            ['state', [1, 2]],
+        ], $query->whereNotIns);
+    }
+
+    public function testGroupFilterWidgetToggleModeRendersAndPassesModeToModelScope()
+    {
+        WidgetManager::instance()->registerFilterWidget(Group::class, 'group');
+
+        $filter = $this->createFilterWithScope('state', [
+            'type' => 'group',
+            'label' => 'State',
+            'matchMode' => 'toggle',
+            'scope' => 'filterState',
+            'options' => [
+                1 => 'State 1',
+            ],
+        ]);
+        $filter->render();
+
+        Request::swap(HttpRequest::create('/', 'POST', ['scopeName' => 'state']));
+        $result = $filter->onFilterRenderForm();
+        $this->assertStringContainsString('value="include"', $result['html']);
+        $this->assertStringContainsString('value="exclude"', $result['html']);
+
+        Request::swap(HttpRequest::create('/', 'POST', [
+            'scopeName' => 'state',
+            'Filter' => [
+                'mode' => 'exclude',
+                'value' => [1],
+            ],
+        ]));
+        $filter->onFilterUpdate();
+
+        $query = new class {
+            public $scopes = [];
+
+            public function filterState($values, $mode)
+            {
+                $this->scopes[] = ['filterState', $values, $mode];
+            }
+        };
+
+        $filter->applyScopeToQuery('state', $query);
+
+        $this->assertSame([
+            ['filterState', [1], 'exclude'],
+        ], $query->scopes);
+    }
+
     public function testFilterWidgetCanResolveModelFromAttachedListWidget()
     {
         $model = new class extends \Winter\Storm\Database\Model {

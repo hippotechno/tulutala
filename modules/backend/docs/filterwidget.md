@@ -205,6 +205,40 @@ scopes:
 
 The option labels are passed through `trans()`.
 
+### Match Mode
+
+`matchMode` controls whether selected group values are included, excluded, or chosen by the user.
+
+```yaml
+scopes:
+    state:
+        label: acme.demo::lang.item.state
+        type: group
+        matchMode: toggle
+        options:
+            1: acme.demo::lang.state.one
+            2: acme.demo::lang.state.two
+```
+
+Supported values:
+
+| Value | Behavior |
+| --- | --- |
+| `include` | Apply selected values as an include filter. This is the default. |
+| `exclude` | Apply selected values as an exclude filter. |
+| `toggle` | Show Include and Exclude buttons in the popover and store the selected mode. |
+
+Without a model scope, include mode applies `whereIn()` and exclude mode applies `whereNotIn()` against `valueFrom` or the scope name. With a model scope, the widget passes selected values as the first argument and the active mode as the second argument.
+
+```php
+public function scopeByState($query, array $ids, string $mode = 'include')
+{
+    return $mode === 'exclude'
+        ? $query->whereNotIn('state_id', $ids)
+        : $query->whereIn('state_id', $ids);
+}
+```
+
 ### Active Header Display
 
 `displayValues` controls what the active `group` header displays.

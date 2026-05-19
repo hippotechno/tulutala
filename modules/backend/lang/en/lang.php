@@ -532,6 +532,8 @@ return [
         'options_method_not_exists' => "The model class :model must define a method :method() returning options for the ':filter' filter.",
         'date_all' => 'all periods',
         'number_all' => 'all numbers',
+        'include' => 'Include',
+        'exclude' => 'Exclude',
     ],
     'import_export' => [
         'export' => 'Export',

@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add built-in backend filter widgets for `text`, `number`, `date`, `group`, `checkbox`, `switch`, `dropdown`, `button-group`, `daterange`, and `numberrange` scopes under `modules/backend/filterwidgets`.
 - Add shared filter widget helpers for option resolution and default option-style query application.
 - Add `displayValues` support to group filter widgets for showing active option titles, keys, or counts, defaulting to titles.
+- Add `matchMode` support to group filter widgets for include, exclude, or user-toggleable Include/Exclude filtering.
 - Add backend filter widget documentation covering usage, registration, lifecycle, built-in widgets, model scopes, group options, and troubleshooting.
 - Add `scripts/local-caddy-cert.sh` to export the Caddy local root certificate and trust it in the macOS System Keychain in one step.
 - Add Windows HTTPS local certificate instructions using `Import-Certificate` and `certutil`.
@@ -31,6 +32,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keep number filter widgets in single-value mode by default, only showing condition controls when multiple conditions are explicitly configured.
 - Update number filter widget headers to show the active numeric value instead of a count.
 - Restore the group filter widget popup markup to match the legacy group filter interface instead of rendering checkbox rows.
+- Show Include and Exclude buttons in the group filter popover when `matchMode: toggle` is configured.
+- Keep group filter Include and Exclude toggle buttons sized to their text instead of stretching across the popover.
+- Fit group filter Include and Exclude toggle buttons to the popover width without expanding the popover.
+- Fix group filter Include and Exclude toggle buttons so the active button updates inside custom filter popovers.
 - Remove legacy filter scope partial rendering so every filter scope UI must resolve through a registered filter widget alias.
 - Update the Storm UI filter control to load custom filter widget forms and apply inline/custom filter widget values.
 - Add legacy-style item movement and local search handling for custom group filter widget popovers.

@@ -14,6 +14,7 @@ class Group extends FilterWidgetBase
 {
     public const MODE_EXCLUDE = 'exclude';
     public const MODE_INCLUDE = 'include';
+    public const MODE_TOGGLE = 'toggle';
 
     public function render()
     {
@@ -32,6 +33,7 @@ class Group extends FilterWidgetBase
         $this->vars['scope'] = $this->filterScope;
         $this->vars['options'] = $this->getAvailableOptions();
         $this->vars['activeLabel'] = $this->getActiveLabel($this->vars['options']);
+        $this->vars['activeMode'] = $this->getActiveMode();
     }
 
     public function getActiveValue()
@@ -48,7 +50,7 @@ class Group extends FilterWidgetBase
         }
 
         $value['value'] = array_combine($selected, $selected);
-        $value['mode'] = $value['mode'] ?? self::MODE_INCLUDE;
+        $value['mode'] = $this->getActiveMode($value['mode'] ?? null);
 
         return $value;
     }
@@ -57,11 +59,13 @@ class Group extends FilterWidgetBase
     {
         $scope = $this->filterScope;
 
-        if ($this->applyModelScopeToQuery($query, array_keys((array) $scope->value))) {
+        $activeValue = (array) $scope->value;
+        $activeMode = $this->getActiveMode();
+
+        if ($this->applyModelScopeToQuery($query, array_keys($activeValue), $activeMode)) {
             return;
         }
 
-        $activeValue = (array) $scope->value;
         if (!count($activeValue)) {
             return;
         }
@@ -75,8 +79,42 @@ class Group extends FilterWidgetBase
             return;
         }
 
-        $action = $scope->mode === self::MODE_EXCLUDE ? 'whereNotIn' : 'whereIn';
-        $query->{$action}($this->valueFrom, $activeValue);
+        $action = $activeMode === self::MODE_EXCLUDE ? 'whereNotIn' : 'whereIn';
+        $query->{$action}($this->valueFrom, array_keys($activeValue));
+    }
+
+    protected function applyModelScopeToQuery($query, $value = null, $mode = null): bool
+    {
+        $scopeMethod = $this->filterScope->modelScope ?: $this->filterScope->scope;
+
+        if (!$scopeMethod) {
+            return false;
+        }
+
+        $query->$scopeMethod($value, $mode ?: $this->getActiveMode());
+        return true;
+    }
+
+    public function getActiveMode(?string $postedMode = null): string
+    {
+        $scope = $this->filterScope;
+        $matchMode = in_array($scope->matchMode, [self::MODE_INCLUDE, self::MODE_EXCLUDE, self::MODE_TOGGLE], true)
+            ? $scope->matchMode
+            : self::MODE_INCLUDE;
+
+        if ($matchMode === self::MODE_TOGGLE) {
+            if (in_array($postedMode, [self::MODE_INCLUDE, self::MODE_EXCLUDE], true)) {
+                return $postedMode;
+            }
+
+            return $scope->mode === self::MODE_EXCLUDE
+                ? self::MODE_EXCLUDE
+                : self::MODE_INCLUDE;
+        }
+
+        return $matchMode === self::MODE_EXCLUDE
+            ? self::MODE_EXCLUDE
+            : self::MODE_INCLUDE;
     }
 
     protected function getAvailableOptions(?string $searchQuery = null): array

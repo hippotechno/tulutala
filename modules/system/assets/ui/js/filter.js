@@ -196,6 +196,11 @@
                 self.searchCustomItems($(this))
             })
 
+            $(event.relatedTarget).on('click', '#controlFilterPopover .filter-match-mode .btn', function(e){
+                e.preventDefault()
+                self.toggleCustomMatchMode($(this))
+            })
+
             $(event.relatedTarget).on('click', '[data-filter-action="apply"]', function (e) {
                 e.preventDefault()
                 self.filterCustomScope(false, $(event.relatedTarget))
@@ -805,6 +810,17 @@
                 var $item = $(this)
                 $item.toggle($item.text().toLowerCase().indexOf(query) !== -1)
             })
+    }
+
+    FilterWidget.prototype.toggleCustomMatchMode = function($button) {
+        var $group = $button.closest('.filter-match-mode'),
+            $input = $button.find('input[type="radio"]')
+
+        $group.find('.btn').removeClass('active')
+        $group.find('input[type="radio"]').prop('checked', false)
+
+        $button.addClass('active')
+        $input.prop('checked', true)
     }
 
     FilterWidget.prototype.isCustomScope = function(scopeName) {

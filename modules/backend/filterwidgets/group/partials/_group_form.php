@@ -9,12 +9,28 @@
             data-search />
 
         <?php if ($scope->matchMode === 'toggle'): ?>
-            <select name="Filter[mode]" class="form-control custom-select select-no-search">
-                <option value="include" <?= $scope->mode !== 'exclude' ? 'selected="selected"' : '' ?>>Includes</option>
-                <option value="exclude" <?= $scope->mode === 'exclude' ? 'selected="selected"' : '' ?>>Excludes</option>
-            </select>
+            <div class="btn-group filter-match-mode" data-toggle="buttons" style="display: flex; width: 100%;">
+                <label class="btn btn-default <?= $activeMode !== 'exclude' ? 'active' : '' ?>" style="flex: 1 1 0;">
+                    <input
+                        type="radio"
+                        name="Filter[mode]"
+                        value="include"
+                        autocomplete="off"
+                        <?= $activeMode !== 'exclude' ? 'checked="checked"' : '' ?>>
+                    <?= e(trans('backend::lang.filter.include')) ?>
+                </label>
+                <label class="btn btn-default <?= $activeMode === 'exclude' ? 'active' : '' ?>" style="flex: 1 1 0;">
+                    <input
+                        type="radio"
+                        name="Filter[mode]"
+                        value="exclude"
+                        autocomplete="off"
+                        <?= $activeMode === 'exclude' ? 'checked="checked"' : '' ?>>
+                    <?= e(trans('backend::lang.filter.exclude')) ?>
+                </label>
+            </div>
         <?php else: ?>
-            <input type="hidden" name="Filter[mode]" value="<?= e($scope->matchMode ?: 'include') ?>">
+            <input type="hidden" name="Filter[mode]" value="<?= e($activeMode) ?>">
         <?php endif ?>
 
         <?php
