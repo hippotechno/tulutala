@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Build the Docker PHP GD extension with WebP support and include the matching runtime WebP library so image upload and thumbnail flows can process `.webp` files inside the app container.
+
 ## [1.1.0]
 
 ### Added

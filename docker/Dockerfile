@@ -36,7 +36,8 @@ RUN printf 'Acquire::Retries "5";\nAcquire::ForceIPv4 "true";\n' > /etc/apt/apt.
         libpng-dev \
         libjpeg62-turbo-dev \
         libfreetype6-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+        libwebp-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install -j"$(nproc)" \
         bcmath \
         exif \
@@ -179,6 +180,7 @@ RUN printf 'Acquire::Retries "5";\nAcquire::ForceIPv4 "true";\n' > /etc/apt/apt.
         libpng16-16 \
         libjpeg62-turbo \
         libfreetype6 \
+        libwebp7 \
         $(if [ "$PRUNE_DEV_ARTIFACTS" != "true" ]; then echo "git openssh-client"; fi) \
     && a2enmod rewrite headers \
     && sed -ri "s!/var/www/html!${APACHE_DOCUMENT_ROOT}!g" \
