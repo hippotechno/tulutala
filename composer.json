@@ -36,7 +36,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/hippotechno/storm"
+            "url": "https://github.com/hippotechno/tl2storm"
         }
     ],
     "require": {
@@ -111,6 +111,7 @@
     },
     "config": {
         "preferred-install": {
+            "hippo/storm": "source",
             "*": "dist"
         },
         "audit": {

@@ -105,7 +105,6 @@ RUN --mount=type=secret,id=github_token,required=false set -eux; \
     until [ "$attempt" -gt 5 ]; do \
         composer install \
             --no-dev \
-            --prefer-dist \
             --no-interaction \
             --optimize-autoloader \
             --classmap-authoritative \

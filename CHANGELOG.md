@@ -5,12 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-### Fixed
-
-- Build the Docker PHP GD extension with WebP support and include the matching runtime WebP library so image upload and thumbnail flows can process `.webp` files inside the app container.
-
 ## [1.1.0]
 
 ### Added
@@ -53,6 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Build the Docker PHP GD extension with WebP support and include the matching runtime WebP library so image upload and thumbnail flows can process `.webp` files inside the app container.
+- Build `hippo/storm` from Composer `source` instead of forcing `dist`, and update the lock file to the current `hippo/storm` `main` commit so dev images stop reinstalling the stale pre-fix Storm snapshot that reintroduced attachment morph cast errors.
+- Add a preflight `hippo/storm` sync check for build and release scripts so they warn when `vendor/hippo/storm` HEAD differs from `composer.lock` and can update the lock file interactively before continuing.
+- Point `hippo/storm` Composer repository, source, dist, and support URLs at the renamed `hippotechno/tl2storm` repository so builds and local pulls no longer rely on GitHub redirect behavior from the old `storm` repository path.
 - Fix built-in group filter widgets so option methods are called on the configured filter model after scope model resolution.
 - Skip legacy group option validation for group scopes handled by registered filter widgets.
 - Fix custom filter widget scope detection so number/text/date widgets are not handled by the legacy group popover before widget instances are created.

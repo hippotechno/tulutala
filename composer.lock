@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3ae24a08d5ca7f95b3dc7685a6920d0a",
+    "content-hash": "ef1720a466a5f968ac15838e4f286488",
     "packages": [
         {
             "name": "antwerpes/data-transfer-object",
@@ -3528,13 +3528,13 @@
             "version": "dev-main",
             "source": {
                 "type": "git",
-                "url": "https://github.com/hippotechno/storm.git",
-                "reference": "31ac1cc34d5aee1fecd5208bdd35144be66bf5a0"
+                "url": "https://github.com/hippotechno/tl2storm.git",
+                "reference": "55d5e2b7ad27f8fe23c0ef782fd5f67e98366273"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/hippotechno/storm/zipball/31ac1cc34d5aee1fecd5208bdd35144be66bf5a0",
-                "reference": "31ac1cc34d5aee1fecd5208bdd35144be66bf5a0",
+                "url": "https://api.github.com/repos/hippotechno/tl2storm/zipball/55d5e2b7ad27f8fe23c0ef782fd5f67e98366273",
+                "reference": "55d5e2b7ad27f8fe23c0ef782fd5f67e98366273",
                 "shasum": ""
             },
             "require": {
@@ -3651,9 +3651,9 @@
                 "winter"
             ],
             "support": {
-                "source": "https://github.com/hippotechno/storm/tree/main"
+                "source": "https://github.com/hippotechno/tl2storm/tree/main"
             },
-            "time": "2026-05-12T15:18:50+00:00"
+            "time": "2026-05-21T03:09:02+00:00"
         },
         {
             "name": "hybridauth/hybridauth",

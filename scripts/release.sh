@@ -245,6 +245,8 @@ fi
 VCS_REF="$(git -C "$REPO_ROOT" rev-parse --short HEAD)"
 HEAD_COMMIT="$(git -C "$REPO_ROOT" rev-parse HEAD)"
 
+"$REPO_ROOT/scripts/preflight-build.sh" --interactive-assets --asset-timeout 60
+
 if ! git -C "$REPO_ROOT" rev-parse -q --verify "refs/tags/$REQUIRED_GIT_TAG" >/dev/null 2>&1; then
   log_error "Thiếu git tag bắt buộc: $REQUIRED_GIT_TAG"
   log_error "Tạo tag rồi push trước khi release, ví dụ:"
@@ -306,8 +308,6 @@ else
   echo "    - Tags     : ${VERSION_TAG}"
 fi
 echo "    - Platforms: ${PLATFORMS}"
-
-"$REPO_ROOT/scripts/preflight-build.sh" --interactive-assets --asset-timeout 60
 
 confirm_push
 
