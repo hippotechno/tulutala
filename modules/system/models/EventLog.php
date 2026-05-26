@@ -22,6 +22,8 @@ class EventLog extends Model
     protected const EXCEPTION_SNIPPET_LINES = 12;
     protected const SAFE_INPUT_MAX_LENGTH = 500;
 
+    protected static bool $isDispatchingNotificationEvent = false;
+
     /**
      * @var string The database table used by the model.
      */
@@ -31,6 +33,11 @@ class EventLog extends Model
      * @var array List of attribute names which are json encoded and decoded from the database.
      */
     protected $jsonable = ['details'];
+
+    public function afterCreate(): void
+    {
+        $this->dispatchNotificationEvent();
+    }
 
     /**
      * Returns true if this logger should be used.
@@ -93,9 +100,9 @@ class EventLog extends Model
     /**
      * Beautify level value.
      */
-    public function getLevelAttribute(string $level): string
+    public function getLevelAttribute(?string $level): string
     {
-        return ucfirst($level);
+        return ucfirst((string) $level);
     }
 
     /**
@@ -149,6 +156,155 @@ class EventLog extends Model
     protected function shouldUseStructuredMessageDetails(string $level): bool
     {
         return in_array(strtolower($level), ['error', 'critical', 'alert', 'emergency'], true);
+    }
+
+    /**
+     * Fire a generic notification event for newly created log entries.
+     */
+    protected function dispatchNotificationEvent(): void
+    {
+        if (static::$isDispatchingNotificationEvent || $this->shouldSkipNotificationDispatch()) {
+            return;
+        }
+
+        static::$isDispatchingNotificationEvent = true;
+
+        try {
+            \Event::fire('hippo.notify.model.is_touched_by_context', [
+                $this,
+                'create',
+                $this->buildNotificationPayload(),
+            ]);
+        }
+        catch (Throwable $throwable) {
+            // Swallow notification dispatch failures to avoid recursive log storms.
+        }
+        finally {
+            static::$isDispatchingNotificationEvent = false;
+        }
+    }
+
+    /**
+     * Build a flattened payload for notification templates while preserving raw details.
+     */
+    protected function buildNotificationPayload(): array
+    {
+        $details = is_array($this->details) ? $this->details : [];
+        $exception = is_array($details['exception'] ?? null) ? $details['exception'] : [];
+        $environment = is_array($details['environment'] ?? null) ? $details['environment'] : [];
+        $actor = is_array($environment['actor'] ?? null) ? $environment['actor'] : [];
+        $actorRole = is_array($actor['role'] ?? null) ? $actor['role'] : [];
+        $hippo = is_array($environment['hippo'] ?? null) ? $environment['hippo'] : [];
+        $profile = is_array($hippo['profile'] ?? null) ? $hippo['profile'] : [];
+        $space = is_array($hippo['space'] ?? null) ? $hippo['space'] : [];
+        $route = is_array($environment['route'] ?? null) ? $environment['route'] : [];
+        $theme = is_array($environment['theme'] ?? null) ? $environment['theme'] : [];
+        $cli = is_array($environment['cli'] ?? null) ? $environment['cli'] : [];
+
+        return [
+            'event_log_id' => $this->id,
+            'message' => $this->message,
+            'summary' => $this->summary,
+            'level' => $this->level,
+            'raw_level' => $this->attributes['level'] ?? null,
+            'created_at' => optional($this->created_at)->toDateTimeString(),
+            'updated_at' => optional($this->updated_at)->toDateTimeString(),
+
+            'log_version' => $details['logVersion'] ?? null,
+
+            'exception' => $exception,
+            'exception_type' => $exception['type'] ?? null,
+            'exception_message' => $exception['message'] ?? $this->message,
+            'exception_file' => $exception['file'] ?? null,
+            'exception_line' => $exception['line'] ?? null,
+            'exception_code' => $exception['code'] ?? null,
+            'exception_trace' => $exception['trace'] ?? [],
+            'exception_string_trace' => $exception['stringTrace'] ?? null,
+
+            'environment' => $environment,
+            'request_context' => $environment['context'] ?? null,
+            'request_id' => $environment['requestId'] ?? null,
+            'request_area' => $environment['area'] ?? null,
+            'request_url' => $environment['url'] ?? null,
+            'request_actual_url' => $environment['actualUrl'] ?? null,
+            'request_scheme' => $environment['scheme'] ?? null,
+            'request_host' => $environment['host'] ?? null,
+            'request_port' => $environment['port'] ?? null,
+            'request_path' => $environment['path'] ?? null,
+            'request_query' => $environment['query'] ?? null,
+            'request_referer' => $environment['referer'] ?? null,
+            'request_method' => $environment['method'] ?? null,
+            'request_ajax' => $environment['ajax'] ?? null,
+            'request_handler' => $environment['handler'] ?? null,
+            'request_ip' => $environment['ip'] ?? null,
+            'request_user_agent' => $environment['userAgent'] ?? null,
+
+            'route' => $route,
+            'route_name' => $route['name'] ?? null,
+            'route_action' => $route['action'] ?? null,
+            'route_controller' => $route['controller'] ?? null,
+            'route_controller_action' => $route['controllerAction'] ?? null,
+            'route_uri' => $route['uri'] ?? null,
+
+            'actor' => $actor,
+            'actor_guard' => $actor['guard'] ?? null,
+            'actor_id' => $actor['id'] ?? null,
+            'actor_login' => $actor['login'] ?? null,
+            'actor_email' => $actor['email'] ?? null,
+            'actor_name' => $actor['name'] ?? null,
+            'actor_role' => $actorRole,
+            'actor_role_id' => $actorRole['id'] ?? null,
+            'actor_role_code' => $actorRole['code'] ?? null,
+            'actor_role_name' => $actorRole['name'] ?? null,
+
+            'hippo' => $hippo,
+            'profile' => $profile,
+            'profile_id' => $profile['id'] ?? null,
+            'profile_code' => $profile['code'] ?? null,
+            'profile_name' => $profile['name'] ?? null,
+            'space' => $space,
+            'space_id' => $space['id'] ?? null,
+            'space_code' => $space['code'] ?? null,
+            'space_name' => $space['name'] ?? null,
+
+            'theme' => $theme,
+            'theme_code' => $theme['code'] ?? null,
+            'theme_name' => $theme['name'] ?? null,
+
+            'cli' => $cli,
+            'cli_command' => $cli['command'] ?? null,
+            'cli_arguments' => $cli['arguments'] ?? [],
+            'cli_options' => $cli['options'] ?? [],
+
+            'app_env' => $environment['env'] ?? null,
+            'input_keys' => $environment['inputKeys'] ?? [],
+            'safe_input' => $environment['safeInput'] ?? [],
+            'bulk_action' => $environment['bulkAction'] ?? null,
+
+            'details' => $details,
+        ];
+    }
+
+    /**
+     * Avoid recursive notifications when the notifier itself fails, especially Telegram send failures.
+     */
+    protected function shouldSkipNotificationDispatch(): bool
+    {
+        $details = is_array($this->details) ? $this->details : [];
+        $exception = is_array($details['exception'] ?? null) ? $details['exception'] : [];
+        $exceptionType = (string) ($exception['type'] ?? '');
+        $exceptionMessage = (string) ($exception['message'] ?? $this->message ?? '');
+        $message = (string) ($this->message ?? '');
+
+        if ($exceptionType === 'NotificationChannels\\Telegram\\Exceptions\\CouldNotSendNotification') {
+            return true;
+        }
+
+        $haystack = strtolower($exceptionMessage . ' ' . $message);
+
+        return str_contains($haystack, 'telegram responded with an error')
+            || str_contains($haystack, 'api.telegram.org')
+            || str_contains($haystack, 'couldnotsendnotification');
     }
 
     /**

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-05-26
+- Added an `afterCreate()` notification hook to `System\Models\EventLog` that fires `hippo.notify.model.is_touched_by_context` with `create` context for notification rules.
+- Expanded the Event Log notification `extra` payload with flattened exception, request, actor, Hippo profile/space, route, theme, CLI, and raw details fields so notification templates can reference log context directly.
+- Prevented Event Log notifications from recursively dispatching alerts for Telegram notification transport failures.
+
 ## 2026-05-17
 - Enriched structured Event Log context with request correlation IDs, route controller/action breakdowns, masked safe input values, bulk action metadata, actor role details, Hippo profile/space context, and CLI command context.
 - Resolve Hippo profile and space Event Log context through backend user `getProfile()` and `getSpace()` calls when available.
