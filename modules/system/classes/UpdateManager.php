@@ -18,6 +18,7 @@ use Winter\Storm\Filesystem\Zip;
 use Carbon\Carbon;
 use Illuminate\Console\View\Components\Error;
 use Illuminate\Console\View\Components\Info;
+use Symfony\Component\Console\Output\NullOutput;
 
 /**
  * Update manager
@@ -97,6 +98,21 @@ class UpdateManager
     protected $messages = [];
 
     /**
+     * @var bool When enabled, migration progress is rendered as a compact summary.
+     */
+    protected $compactOutput = false;
+
+    /**
+     * @var array Aggregated migration summary for compact output.
+     */
+    protected $compactSummary = [
+        'modules_checked' => 0,
+        'plugins_checked' => 0,
+        'migrated' => [],
+        'skipped' => 0,
+    ];
+
+    /**
      * Initialize this singleton.
      */
     protected function init()
@@ -134,23 +150,34 @@ class UpdateManager
      */
     public function update()
     {
+        $this->compactSummary = [
+            'modules_checked' => 0,
+            'plugins_checked' => 0,
+            'migrated' => [],
+            'skipped' => 0,
+        ];
+
         try {
             $firstUp = !Schema::hasTable($this->getMigrationTableName());
             if ($firstUp) {
                 $this->repository->createRepository();
-                $this->out('', true);
-                $this->write(Info::class, 'Migration table created');
+                if (!$this->compactOutput) {
+                    $this->out('', true);
+                    $this->write(Info::class, 'Migration table created');
+                }
             }
 
             /*
             * Update modules
             */
             $modules = Config::get('cms.loadModules', []);
+            $this->compactSummary['modules_checked'] = count($modules);
             foreach ($modules as $module) {
                 $this->migrateModule($module);
             }
 
             $plugins = $this->pluginManager->getPlugins();
+            $this->compactSummary['plugins_checked'] = count($plugins);
 
             /*
             * Replace plugins
@@ -197,8 +224,12 @@ class UpdateManager
                 }
             }
 
-            $this->out('', true);
-            $this->write(Info::class, 'Migration complete.');
+            if ($this->compactOutput) {
+                $this->renderCompactSummary();
+            } else {
+                $this->out('', true);
+                $this->write(Info::class, 'Migration complete.');
+            }
         } catch (\Throwable $ex) {
             throw $ex;
         } finally {
@@ -460,13 +491,17 @@ class UpdateManager
      */
     public function migrateModule($module)
     {
-        if (isset($this->notesOutput)) {
+        if ($this->compactOutput) {
+            $this->migrator->setOutput(new NullOutput);
+        } elseif (isset($this->notesOutput)) {
             $this->migrator->setOutput($this->notesOutput);
         }
 
-        $this->out('', true);
-        $this->out(sprintf('<info>Migrating %s module...</info>', $module), true);
-        $this->out('', true);
+        if (!$this->compactOutput) {
+            $this->out('', true);
+            $this->out(sprintf('<info>Migrating %s module...</info>', $module), true);
+            $this->out('', true);
+        }
 
         $this->migrator->run(base_path() . '/modules/'.strtolower($module).'/database/migrations');
 
@@ -485,9 +520,11 @@ class UpdateManager
             return;
         }
 
-        $this->out('', true);
-        $this->out(sprintf('<info>Seeding %s module...</info>', $module), true);
-        $this->out('', true);
+        if (!$this->compactOutput) {
+            $this->out('', true);
+            $this->out(sprintf('<info>Seeding %s module...</info>', $module), true);
+            $this->out('', true);
+        }
 
         $seeder = App::make($className);
         $return = $seeder->run();
@@ -496,7 +533,9 @@ class UpdateManager
             $this->addMessage($className, $return);
         }
 
-        $this->write(Info::class, sprintf('Seeded %s', $module));
+        if (!$this->compactOutput) {
+            $this->write(Info::class, sprintf('Seeded %s', $module));
+        }
 
         return $this;
     }
@@ -582,16 +621,28 @@ class UpdateManager
          * Update the plugin database and version
          */
         if (!($plugin = $this->pluginManager->findByIdentifier($name))) {
-            $this->write(Error::class, sprintf('Unable to find plugin %s', $name));
+            if (!$this->compactOutput) {
+                $this->write(Error::class, sprintf('Unable to find plugin %s', $name));
+            }
             return;
         }
 
-        $this->out(sprintf('<info>Migrating %s (%s) plugin...</info>', Lang::get($plugin->pluginDetails()['name']), $name));
-        $this->out('', true);
+        $pluginName = Lang::get($plugin->pluginDetails()['name']);
 
-        $this->versionManager->setNotesOutput($this->notesOutput);
+        if (!$this->compactOutput) {
+            $this->out(sprintf('<info>Migrating %s (%s) plugin...</info>', $pluginName, $name));
+            $this->out('', true);
+        }
 
-        $this->versionManager->updatePlugin($plugin);
+        $result = $this->versionManager
+            ->setNotesOutput($this->notesOutput)
+            ->useCompactOutput($this->compactOutput)
+            ->updatePlugin($plugin);
+
+        if ($this->compactOutput && is_array($result)) {
+            $result['name'] = $pluginName;
+            $this->recordPluginMigration($result);
+        }
 
         return $this;
     }
@@ -918,6 +969,16 @@ class UpdateManager
         return $this;
     }
 
+    /**
+     * Enables compact output rendering for migration commands.
+     */
+    public function useCompactOutput(bool $compact = true)
+    {
+        $this->compactOutput = $compact;
+
+        return $this;
+    }
+
     //
     // Gateway access
     //
@@ -1139,6 +1200,78 @@ class UpdateManager
 
             foreach ($messages as $message) {
                 $this->out('    - ' . $message, true);
+            }
+
+            $this->out('', true);
+        }
+    }
+
+    /**
+     * Stores the result of a plugin migration for compact rendering.
+     */
+    protected function recordPluginMigration(array $result): void
+    {
+        if (($result['status'] ?? null) === 'migrated') {
+            $this->compactSummary['migrated'][] = [
+                'code' => $result['code'],
+                'name' => $result['name'] ?? $result['code'],
+                'versions' => $result['versions'] ?? [],
+            ];
+
+            return;
+        }
+
+        $this->compactSummary['skipped']++;
+    }
+
+    /**
+     * Renders a compact migration summary for winter:up.
+     */
+    protected function renderCompactSummary(): void
+    {
+        $appName = (string) Config::get('app.name', 'WinterCMS');
+        $plainTitle = trim($appName) !== '' ? $appName . ' Migration Summary' : 'WinterCMS Migration Summary';
+        $title = ' ' . $plainTitle . ' ';
+        $border = '+' . str_repeat('-', strlen($title) + 2) . '+';
+        $migratedCount = count($this->compactSummary['migrated']);
+
+        $this->out('', true);
+        $this->out($border, true);
+        $this->out('| ' . $title . ' |', true);
+        $this->out($border, true);
+        $this->out('', true);
+        $this->out(sprintf('Core modules : <fg=cyan;options=bold>%d</> checked', $this->compactSummary['modules_checked']), true);
+        $this->out(sprintf('Plugins      : <fg=cyan;options=bold>%d</> checked', $this->compactSummary['plugins_checked']), true);
+        $this->out(sprintf('Migrated     : <fg=green;options=bold>%d</>', $migratedCount), true);
+        $this->out(sprintf('Skipped      : <fg=yellow;options=bold>%d</>', $this->compactSummary['skipped']), true);
+        $this->out('Status       : <fg=green;options=bold>COMPLETE</>', true);
+        $this->out('', true);
+        $this->out('<options=bold>Migrated items</>', true);
+
+        if ($migratedCount === 0) {
+            $this->out('  <comment>None</comment>', true);
+            $this->out('', true);
+            return;
+        }
+
+        $versionColors = ['cyan', 'yellow', 'magenta', 'blue', 'green'];
+
+        foreach ($this->compactSummary['migrated'] as $pluginIndex => $plugin) {
+            $this->out(sprintf(
+                '  <fg=green;options=bold>✓</> <fg=green;options=bold>%s</>',
+                $plugin['code']
+            ), true);
+
+            foreach ($plugin['versions'] as $versionIndex => $version) {
+                $color = $versionColors[($pluginIndex + $versionIndex) % count($versionColors)];
+                $versionLabel = 'v' . ltrim((string) $version['version'], 'v');
+
+                $this->out(sprintf(
+                    '    - <fg=%s;options=bold>%s</>  %s',
+                    $color,
+                    $versionLabel,
+                    $version['description']
+                ), true);
             }
 
             $this->out('', true);

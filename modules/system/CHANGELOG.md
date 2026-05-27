@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-05-27
+- Changed `winter:up` console output to render a compact migration summary with checked module/plugin counts, migrated and skipped totals, and colorized migrated version entries.
+
 ## 2026-05-26
 - Added an `afterCreate()` notification hook to `System\Models\EventLog` that fires `hippo.notify.model.is_touched_by_context` with `create` context for notification rules.
 - Expanded the Event Log notification `extra` payload with flattened exception, request, actor, Hippo profile/space, route, theme, CLI, and raw details fields so notification templates can reference log context directly.

@@ -38,6 +38,11 @@ class VersionManager
     protected $notesOutput;
 
     /**
+     * @var bool When enabled, plugin migrations are summarized by the caller instead of rendered inline.
+     */
+    protected $compactOutput = false;
+
+    /**
      * Cache of plugin versions as files.
      */
     protected $fileVersions;
@@ -78,35 +83,62 @@ class VersionManager
         $code = is_string($plugin) ? $plugin : $this->pluginManager->getIdentifier($plugin);
 
         if (!$this->hasVersionFile($code)) {
-            return false;
+            return [
+                'code' => $code,
+                'status' => 'skipped',
+                'versions' => [],
+            ];
         }
 
         $currentVersion = $this->getLatestFileVersion($code);
         $databaseVersion = $this->getDatabaseVersion($code);
 
-        $this->out('', true);
+        if (!$this->compactOutput) {
+            $this->out('', true);
+        }
 
         // No updates needed
         if ($currentVersion === (string) $databaseVersion) {
-            $this->write(Info::class, 'Nothing to migrate.');
-            return;
+            if (!$this->compactOutput) {
+                $this->write(Info::class, 'Nothing to migrate.');
+            }
+
+            return [
+                'code' => $code,
+                'status' => 'skipped',
+                'versions' => [],
+            ];
         }
 
         $newUpdates = $this->getNewFileVersions($code, $databaseVersion);
 
-        $this->write(Info::class, 'Running migrations.');
+        if (!$this->compactOutput) {
+            $this->write(Info::class, 'Running migrations.');
+        }
+
+        $appliedVersions = [];
 
         foreach ($newUpdates as $version => $details) {
-            $this->applyPluginUpdate($code, $version, $details);
+            $appliedVersions[] = $this->applyPluginUpdate($code, $version, $details);
 
             if ($stopAfterVersion === $version) {
-                return true;
+                return [
+                    'code' => $code,
+                    'status' => count($appliedVersions) ? 'migrated' : 'skipped',
+                    'versions' => $appliedVersions,
+                ];
             }
         }
 
-        $this->out('', true);
+        if (!$this->compactOutput) {
+            $this->out('', true);
+        }
 
-        return true;
+        return [
+            'code' => $code,
+            'status' => count($appliedVersions) ? 'migrated' : 'skipped',
+            'versions' => $appliedVersions,
+        ];
     }
 
     /**
@@ -180,6 +212,7 @@ class VersionManager
     protected function applyPluginUpdate($code, $version, $details)
     {
         list($comments, $scripts) = $this->extractScriptsAndComments($details);
+        $description = $this->describeVersion($comments, $scripts);
 
         $updateFn = function () use ($code, $version, $comments, $scripts) {
             /*
@@ -205,16 +238,24 @@ class VersionManager
             $this->setDatabaseVersion($code, $version);
         };
 
-        if (is_null($this->notesOutput)) {
+        if ($this->compactOutput || is_null($this->notesOutput)) {
             $updateFn();
-            return;
+            return [
+                'version' => $version,
+                'description' => $description,
+            ];
         }
 
         $this->write(Task::class, sprintf(
             '<info>%s</info>%s',
             str_pad($version . ':', 10),
-            (strlen($comments[0]) > 120) ? substr($comments[0], 0, 120) . '...' : $comments[0]
+            $description
         ), $updateFn);
+
+        return [
+            'version' => $version,
+            'description' => $description,
+        ];
     }
 
     /**
@@ -649,6 +690,16 @@ class VersionManager
     }
 
     /**
+     * Enables compact output so the caller can render a single summary instead of verbose per-version logs.
+     */
+    public function useCompactOutput(bool $compact = true)
+    {
+        $this->compactOutput = $compact;
+
+        return $this;
+    }
+
+    /**
      * Extract script and comments from version details
      * @return array
      */
@@ -671,6 +722,28 @@ class VersionManager
         }
 
         return [$comments, $scripts];
+    }
+
+    /**
+     * Builds a human readable label for a migration version.
+     */
+    protected function describeVersion(array $comments, array $scripts): string
+    {
+        $description = trim((string) ($comments[0] ?? ''));
+
+        if ($description === '' && !empty($scripts[0])) {
+            $description = pathinfo($scripts[0], PATHINFO_FILENAME);
+        }
+
+        if ($description === '') {
+            $description = 'migration';
+        }
+
+        if (strlen($description) > 120) {
+            $description = substr($description, 0, 120) . '...';
+        }
+
+        return $description;
     }
 
     /**
