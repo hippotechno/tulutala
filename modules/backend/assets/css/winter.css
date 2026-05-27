@@ -642,6 +642,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,san
 .layout-fill-container{position:absolute;left:0;top:0;width:100%;height:100%}
 [data-calculate-width]>form,
 [data-calculate-width]>div{display:inline-block}
+.toolbar-widget .control-toolbar:before,
+.toolbar-widget .control-toolbar:after{content:" ";display:table}
+.toolbar-widget .control-toolbar:after{clear:both}
+.toolbar-widget .toolbar-primary{float:left}
+.toolbar-widget .toolbar-item-search{float:right;width:auto}
+.toolbar-widget .toolbar-item-search .search-widget-control{display:inline-flex;align-items:center;gap:6px}
+.toolbar-widget .toolbar-item-search .search-input-wrap{position:relative}
+.toolbar-widget .toolbar-item-search .search-input-wrap>input.form-control{padding-right:32px}
+.toolbar-widget .toolbar-item-search .search-input-wrap .clear-input-text{position:absolute;top:78%;right:8px;transform:translateY(-50%);z-index:2}
+.toolbar-widget .toolbar-item-search .search-help-button{flex:0 0 auto;width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;padding:0;border-radius:999px;border:1px solid #d7dee3;background:#f6f8fa;color:#53636b;line-height:28px;text-decoration:none}
+.toolbar-widget .toolbar-item-search .search-help-button:hover,
+.toolbar-widget .toolbar-item-search .search-help-button:focus{background:#eef2f5;color:#2b3e50;text-decoration:none}
+.toolbar-widget .toolbar-item-search .search-help-button.wn-icon-info:before{padding-left:9px}
 body.compact-container .layout.layout-container,
 body.compact-container .layout .layout-container{padding:0 !important}
 body.slim-container .layout.layout-container,

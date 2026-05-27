@@ -163,6 +163,7 @@ class RecordFinder extends FormWidgetBase
 
             $this->searchWidget = $this->makeSearchWidget();
             $this->searchWidget->bindToController();
+            $this->searchWidget->setSearchHelpFields($this->listWidget->getSearchHelpFields());
 
             $this->listWidget->setSearchTerm($this->searchWidget->getActiveTerm());
 

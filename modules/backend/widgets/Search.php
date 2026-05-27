@@ -46,6 +46,11 @@ class Search extends WidgetBase
      */
     public $searchOnEnter = false;
 
+    /**
+     * @var array Search help field metadata for the helper popup.
+     */
+    public $searchHelpFields = [];
+
     //
     // Object properties
     //
@@ -112,6 +117,7 @@ class Search extends WidgetBase
         $this->vars['placeholder'] = Lang::get($this->prompt);
         $this->vars['value'] = $this->getActiveTerm();
         $this->vars['searchOnEnter'] = $this->searchOnEnter;
+        $this->vars['searchHelpFields'] = $this->searchHelpFields;
     }
 
     /**
@@ -142,6 +148,16 @@ class Search extends WidgetBase
     }
 
     /**
+     * Loads the search help popup.
+     */
+    public function onLoadSearchHelp()
+    {
+        $this->prepareVars();
+
+        return $this->makePartial('search_help_popup');
+    }
+
+    /**
      * Returns an active search term for this widget instance.
      */
     public function getActiveTerm()
@@ -161,6 +177,14 @@ class Search extends WidgetBase
         }
 
         $this->activeTerm = $term;
+    }
+
+    /**
+     * Sets the search help fields shown in the helper popup.
+     */
+    public function setSearchHelpFields(array $fields = [])
+    {
+        $this->searchHelpFields = $fields;
     }
 
     /**

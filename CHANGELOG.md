@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 2026-05-27
+
+### Added
+- Add structured backend list search support for `field:value` and `field:"multi word value"` syntax on searchable list columns while preserving unprefixed terms as the existing global search query.
+- Add label-derived search aliases for searchable backend list columns so end users can target fields using normalized visible column labels instead of only internal config keys.
+- Add a search help info button to backend search widgets that opens a localized popup describing the supported search syntax and the searchable field aliases available on the current list.
+
+### Changed
+- Update core backend list search parsing so recognized field-prefixed tokens target matching searchable columns directly, including relation-backed searchable columns, while unknown tokens continue to fall back to the generic search term.
+- Parse relation-style list columns such as `collection[name]` into relation metadata when the leading segment matches a real model relation, allowing relation leaf fields to participate in both global and fielded search without widening the search to unrelated relation columns.
+- Make backend toolbar search widgets align to the right by default through backend toolbar/CSS rules instead of relying on per-skin width auto-calculation, and give the new search helper trigger a visible default button treatment.
+- Extend fielded backend list search for boolean columns so label aliases such as `hien-thi` accept localized and shorthand boolean values like `Có/Không`, `co/khong`, `true/false`, and `1/0`, and surface that guidance in the search helper popup.
+
+### Fixed
+- Skip backend list search fields that resolve to dynamic attributes or other non-database relation properties, preventing SQL errors for searchable columns such as `address[full_path]` while also hiding unsupported aliases from the search helper popup.
+
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

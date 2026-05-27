@@ -21,6 +21,7 @@ use Winter\Storm\Router\Helper as RouterHelper;
 use Winter\Storm\Support\Facades\DB;
 use Winter\Storm\Support\Facades\DbDongle;
 use Winter\Storm\Support\Facades\Html;
+use Winter\Storm\Support\Facades\Schema;
 use Winter\Storm\Support\Str;
 
 /**
@@ -445,33 +446,44 @@ class Lists extends WidgetBase
          */
         $primarySearchable = [];
         $relationSearchable = [];
+        $fieldSearchable = [];
+        $searchableColumns = [];
+        $parsedSearchTerm = [
+            'term' => $this->searchTerm,
+            'fields' => [],
+        ];
         if (
             strlen($this->searchTerm) !== 0
             && trim($this->searchTerm) !== ''
             && ($searchableColumns = $this->getSearchableColumns())
         ) {
             foreach ($searchableColumns as $column) {
+                $columnName = $this->resolveSearchableColumnExpression($column, $primaryTable);
+
+                if ($columnName === null) {
+                    continue;
+                }
+
                 /*
                  * Related
                  */
                 if ($this->isColumnRelated($column)) {
-                    $table = $this->model->makeRelation($column->relation)->getTable();
-                    $columnName = isset($column->sqlSelect)
-                        ? DbDongle::raw($this->parseTableName($column->sqlSelect, $table))
-                        : $table . '.' . $column->valueFrom;
-
                     $relationSearchable[$column->relation][] = $columnName;
                 }
                 /*
                  * Primary
                  */
                 else {
-                    $columnName = isset($column->sqlSelect)
-                        ? DbDongle::raw($this->parseTableName($column->sqlSelect, $primaryTable))
-                        : DbDongle::cast(DB::getTablePrefix() . $primaryTable . '.' . $column->columnName, 'TEXT');
-
                     $primarySearchable[] = $columnName;
                 }
+
+                foreach ($this->getSearchFieldAliases($column) as $fieldAlias) {
+                    $fieldSearchable[$fieldAlias]['targets'][] = $this->makeSearchFieldTarget($column, $columnName, $primaryTable);
+                }
+            }
+
+            if (!$this->searchScope) {
+                $parsedSearchTerm = $this->parseStructuredSearchTerm($this->searchTerm, $fieldSearchable);
             }
         }
 
@@ -505,19 +517,20 @@ class Lists extends WidgetBase
         /*
          * Apply search term
          */
-        $query->where(function ($innerQuery) use ($primarySearchable, $relationSearchable, $joins) {
+        $query->where(function ($innerQuery) use ($primarySearchable, $relationSearchable, $joins, $parsedSearchTerm, $fieldSearchable) {
+            $genericTerm = $parsedSearchTerm['term'] ?? $this->searchTerm;
 
             /*
              * Search primary columns
              */
-            if (count($primarySearchable) > 0) {
-                $this->applySearchToQuery($innerQuery, $primarySearchable, 'or');
+            if (count($primarySearchable) > 0 && strlen(trim($genericTerm)) > 0) {
+                $this->applySearchToQuery($innerQuery, $primarySearchable, 'or', $genericTerm);
             }
 
             /*
              * Search relation columns
              */
-            if ($joins) {
+            if ($joins && strlen(trim($genericTerm)) > 0) {
                 foreach (array_unique($joins) as $join) {
                     /*
                      * Apply a supplied search term for relation columns and
@@ -526,11 +539,43 @@ class Lists extends WidgetBase
                     $columnsToSearch = array_get($relationSearchable, $join, []);
 
                     if (count($columnsToSearch) > 0) {
-                        $innerQuery->orWhereHas($join, function ($_query) use ($columnsToSearch) {
-                            $this->applySearchToQuery($_query, $columnsToSearch);
+                        $innerQuery->orWhereHas($join, function ($_query) use ($columnsToSearch, $genericTerm) {
+                            $this->applySearchToQuery($_query, $columnsToSearch, 'and', $genericTerm);
                         });
                     }
                 }
+            }
+
+            foreach ($parsedSearchTerm['fields'] ?? [] as $fieldSearch) {
+                $fieldConfig = $fieldSearchable[$fieldSearch['field']] ?? null;
+
+                if (!$fieldConfig || empty($fieldConfig['targets'])) {
+                    continue;
+                }
+
+                $innerQuery->where(function ($fieldQuery) use ($fieldConfig, $fieldSearch) {
+                    $booleanValue = $this->normalizeBooleanSearchValue($fieldSearch['term']);
+                    $handled = false;
+
+                    foreach ($fieldConfig['targets'] as $target) {
+                        if (!empty($target['boolean'])) {
+                            if ($booleanValue === null) {
+                                continue;
+                            }
+
+                            $this->applyBooleanTargetToQuery($fieldQuery, $target, $booleanValue, 'or');
+                            $handled = true;
+                            continue;
+                        }
+
+                        $this->applySearchTargetToQuery($fieldQuery, $target, $fieldSearch['term'], 'or');
+                        $handled = true;
+                    }
+
+                    if (!$handled && !empty($fieldConfig['booleanOnly'])) {
+                        $fieldQuery->whereRaw('1 = 0');
+                    }
+                });
             }
         });
 
@@ -1106,9 +1151,23 @@ class Lists extends WidgetBase
          * Auto configure standard relation
          */
         elseif (strpos($name, '[') !== false && strpos($name, ']') !== false) {
-            $config['valueFrom'] = $name;
+            $_name = HtmlHelper::nameToArray($name);
+            $relationName = array_shift($_name);
+            $valueFrom = array_shift($_name);
+
+            if ($relationName && $this->model->hasRelation($relationName)) {
+                if (count($_name) > 0) {
+                    $valueFrom .= '[' . implode('][', $_name) . ']';
+                }
+
+                $config['relation'] = $relationName;
+                $config['valueFrom'] = $valueFrom;
+            }
+            else {
+                $config['valueFrom'] = $name;
+            }
+
             $config['sortable'] = false;
-            $config['searchable'] = false;
         }
 
         $columnType = $config['type'] ?? null;
@@ -1723,9 +1782,9 @@ class Lists extends WidgetBase
     /**
      * Applies the search constraint to a query.
      */
-    protected function applySearchToQuery($query, $columns, $boolean = 'and')
+    protected function applySearchToQuery($query, $columns, $boolean = 'and', $term = null)
     {
-        $term = $this->searchTerm;
+        $term = $term ?? $this->searchTerm;
 
         if ($scopeMethod = $this->searchScope) {
             $searchMethod = $boolean == 'and' ? 'where' : 'orWhere';
@@ -1737,6 +1796,352 @@ class Lists extends WidgetBase
             $searchMethod = $boolean == 'and' ? 'searchWhere' : 'orSearchWhere';
             $query->$searchMethod($term, $columns, $this->searchMode);
         }
+    }
+
+    /**
+     * Resolves a list column to a database-searchable expression, or null if it cannot be queried safely.
+     */
+    protected function resolveSearchableColumnExpression(ListColumn $column, string $primaryTable)
+    {
+        if (isset($column->sqlSelect)) {
+            if ($this->isColumnRelated($column)) {
+                $table = $this->model->makeRelation($column->relation)->getTable();
+                return DbDongle::raw($this->parseTableName($column->sqlSelect, $table));
+            }
+
+            return DbDongle::raw($this->parseTableName($column->sqlSelect, $primaryTable));
+        }
+
+        if ($this->isColumnRelated($column)) {
+            $relationModel = $this->model->makeRelation($column->relation);
+            $field = $column->valueFrom;
+
+            if (!$this->isSearchBackedByDatabaseColumn($relationModel, $field)) {
+                return null;
+            }
+
+            return $relationModel->getTable() . '.' . $field;
+        }
+
+        $field = $column->valueFrom ?: $column->columnName;
+
+        if (!$this->isSearchBackedByDatabaseColumn($this->model, $field)) {
+            return null;
+        }
+
+        return DbDongle::cast(DB::getTablePrefix() . $primaryTable . '.' . $field, 'TEXT');
+    }
+
+    /**
+     * Builds metadata for a field-specific search target.
+     */
+    protected function makeSearchFieldTarget(ListColumn $column, $expression, string $primaryTable): array
+    {
+        $isRelated = $this->isColumnRelated($column);
+        $field = $column->valueFrom ?: $column->columnName;
+        $boolean = false;
+        $whereField = null;
+
+        if (!isset($column->sqlSelect) && $this->isSimpleDatabaseField($field)) {
+            if ($isRelated) {
+                $relationModel = $this->model->makeRelation($column->relation);
+                $whereField = $relationModel->getTable() . '.' . $field;
+                $boolean = $this->isBooleanSearchColumn($column);
+            }
+            else {
+                $whereField = DB::getTablePrefix() . $primaryTable . '.' . $field;
+                $boolean = $this->isBooleanSearchColumn($column);
+            }
+        }
+
+        return [
+            'relation' => $isRelated ? $column->relation : null,
+            'expression' => $expression,
+            'whereField' => $whereField,
+            'boolean' => $boolean,
+        ];
+    }
+
+    /**
+     * Determines whether a searchable field maps to a real database column.
+     */
+    protected function isSearchBackedByDatabaseColumn(Model $model, ?string $field): bool
+    {
+        if (!is_string($field) || $field === '') {
+            return false;
+        }
+
+        if (str_contains($field, '[') || str_contains($field, ']') || str_contains($field, '.')) {
+            return false;
+        }
+
+        return Schema::connection($model->getConnectionName())->hasColumn($model->getTable(), $field);
+    }
+
+    /**
+     * Determines whether a field name is a simple column reference.
+     */
+    protected function isSimpleDatabaseField(?string $field): bool
+    {
+        if (!is_string($field) || $field === '') {
+            return false;
+        }
+
+        return !str_contains($field, '[') && !str_contains($field, ']') && !str_contains($field, '.');
+    }
+
+    /**
+     * Determines whether a searchable column should use boolean field matching.
+     */
+    protected function isBooleanSearchColumn(ListColumn $column): bool
+    {
+        if (!in_array($column->type, ['switch', 'checkbox'], true)) {
+            return false;
+        }
+
+        $model = $this->isColumnRelated($column)
+            ? $this->model->makeRelation($column->relation)
+            : $this->model;
+
+        $field = $column->valueFrom ?: $column->columnName;
+
+        if (!$this->isSimpleDatabaseField($field)) {
+            return false;
+        }
+
+        if (method_exists($model, 'hasCast') && $model->hasCast($field, ['bool', 'boolean'])) {
+            return true;
+        }
+
+        return true;
+    }
+
+    /**
+     * Normalizes fielded boolean search values.
+     */
+    protected function normalizeBooleanSearchValue(string $value): ?bool
+    {
+        $normalized = mb_strtolower(trim($value));
+        $ascii = Str::lower(Str::ascii($normalized));
+
+        if (in_array($normalized, ['1', 'true', 'yes', 'có'], true) || in_array($ascii, ['1', 'true', 'yes', 'co'], true)) {
+            return true;
+        }
+
+        if (in_array($normalized, ['0', 'false', 'no', 'không'], true) || in_array($ascii, ['0', 'false', 'no', 'khong'], true)) {
+            return false;
+        }
+
+        return null;
+    }
+
+    /**
+     * Applies a field-specific search target to a query.
+     */
+    protected function applySearchTargetToQuery($query, array $target, string $term, string $boolean = 'and'): void
+    {
+        if (!empty($target['relation'])) {
+            $method = $boolean === 'or' ? 'orWhereHas' : 'whereHas';
+            $query->$method($target['relation'], function ($_query) use ($target, $term) {
+                $this->applySearchToQuery($_query, [$target['expression']], 'and', $term);
+            });
+            return;
+        }
+
+        $this->applySearchToQuery($query, [$target['expression']], $boolean, $term);
+    }
+
+    /**
+     * Applies an exact boolean match target to a query.
+     */
+    protected function applyBooleanTargetToQuery($query, array $target, bool $value, string $boolean = 'and'): void
+    {
+        if (empty($target['whereField'])) {
+            return;
+        }
+
+        if (!empty($target['relation'])) {
+            $method = $boolean === 'or' ? 'orWhereHas' : 'whereHas';
+            $query->$method($target['relation'], function ($_query) use ($target, $value) {
+                $_query->where($target['whereField'], $value ? 1 : 0);
+            });
+            return;
+        }
+
+        $method = $boolean === 'or' ? 'orWhere' : 'where';
+        $query->$method($target['whereField'], $value ? 1 : 0);
+    }
+
+    /**
+     * Returns recognized field aliases for a searchable column.
+     */
+    protected function getSearchFieldAliases(ListColumn $column): array
+    {
+        $aliases = [];
+
+        if ($this->isColumnRelated($column)) {
+            $relation = mb_strtolower($column->relation);
+
+            $aliases[] = $relation;
+            $aliases[] = mb_strtolower($column->columnName);
+
+            if ($column->valueFrom) {
+                $valueFrom = mb_strtolower($column->valueFrom);
+
+                $aliases[] = $relation . '[' . $valueFrom . ']';
+                $aliases[] = $relation . '.' . str_replace(['][', '[', ']'], ['.', '.', ''], $valueFrom);
+            }
+        }
+        else {
+            foreach ([$column->columnName, $column->valueFrom ?? null] as $candidate) {
+                if (!is_string($candidate) || $candidate === '') {
+                    continue;
+                }
+
+                $aliases[] = mb_strtolower($candidate);
+            }
+        }
+
+        $labelAlias = $this->normalizeSearchFieldAlias(Lang::get($column->label));
+        if ($labelAlias !== null) {
+            $aliases[] = $labelAlias;
+        }
+
+        return array_values(array_unique($aliases));
+    }
+
+    /**
+     * Parses a search term into a generic query and recognized field-specific clauses.
+     */
+    protected function parseStructuredSearchTerm(string $term, array $fieldSearchable): array
+    {
+        $parsed = [
+            'term' => trim($term),
+            'fields' => [],
+        ];
+
+        if ($term === '' || empty($fieldSearchable)) {
+            return $parsed;
+        }
+
+        preg_match_all('/([\pL\pN_.\-\[\]]+):(?:"((?:\\\\.|[^"\\\\])*)"|(\\S+))/u', $term, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+
+        if (!$matches) {
+            return $parsed;
+        }
+
+        $consumed = [];
+
+        foreach ($matches as $match) {
+            $field = mb_strtolower($match[1][0]);
+
+            if (!array_key_exists($field, $fieldSearchable)) {
+                continue;
+            }
+
+            $value = $match[2][1] !== -1
+                ? stripcslashes($match[2][0])
+                : $match[3][0];
+
+            $value = trim($value);
+
+            if ($value === '') {
+                continue;
+            }
+
+            $parsed['fields'][] = [
+                'field' => $field,
+                'term' => $value,
+            ];
+
+            $consumed[] = [
+                'offset' => $match[0][1],
+                'length' => strlen($match[0][0]),
+            ];
+        }
+
+        if (!$consumed) {
+            return $parsed;
+        }
+
+        usort($consumed, function ($left, $right) {
+            return $left['offset'] <=> $right['offset'];
+        });
+
+        $genericParts = [];
+        $cursor = 0;
+
+        foreach ($consumed as $segment) {
+            if ($segment['offset'] > $cursor) {
+                $genericParts[] = substr($term, $cursor, $segment['offset'] - $cursor);
+            }
+
+            $cursor = $segment['offset'] + $segment['length'];
+        }
+
+        if ($cursor < strlen($term)) {
+            $genericParts[] = substr($term, $cursor);
+        }
+
+        $parsed['term'] = trim(preg_replace('/\s+/u', ' ', implode(' ', $genericParts)));
+
+        return $parsed;
+    }
+
+    /**
+     * Returns search help metadata for the connected search widget.
+     */
+    public function getSearchHelpFields(): array
+    {
+        $fields = [];
+
+        foreach ($this->getSearchableColumns() as $column) {
+            if ($this->resolveSearchableColumnExpression($column, $this->model->getTable()) === null) {
+                continue;
+            }
+
+            $aliases = $this->getSearchFieldAliases($column);
+
+            if (!$aliases) {
+                continue;
+            }
+
+            $primaryAlias = $this->normalizeSearchFieldAlias(Lang::get($column->label))
+                ?: reset($aliases);
+
+            $secondaryAliases = array_values(array_filter(array_unique($aliases), function ($alias) use ($primaryAlias) {
+                return $alias !== $primaryAlias;
+            }));
+
+            $fields[] = [
+                'label' => Lang::get($column->label),
+                'alias' => $primaryAlias,
+                'aliases' => $secondaryAliases,
+                'booleanValues' => $this->isBooleanSearchColumn($column),
+            ];
+        }
+
+        return $fields;
+    }
+
+    /**
+     * Normalizes a human-facing field alias to a parser-friendly token.
+     */
+    protected function normalizeSearchFieldAlias($value): ?string
+    {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        $value = Str::slug($value);
+
+        return $value !== '' ? mb_strtolower($value) : null;
     }
 
     //

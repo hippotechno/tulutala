@@ -219,6 +219,8 @@ class ListController extends ControllerBehavior
                     return $widget->onRefresh();
                 });
 
+                $searchWidget->setSearchHelpFields($widget->getSearchHelpFields());
+
                 $widget->setSearchOptions([
                     'mode' => $searchWidget->mode,
                     'scope' => $searchWidget->scope,

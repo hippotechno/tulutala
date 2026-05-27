@@ -11,7 +11,7 @@
 
     <?php if ($search): ?>
         <!-- List Search -->
-        <div class="toolbar-item" data-calculate-width>
+        <div class="toolbar-item toolbar-item-search">
             <?= $search ?>
         </div>
     <?php endif ?>
