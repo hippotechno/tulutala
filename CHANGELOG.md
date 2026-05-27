@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Replace Composer requirement from `winter/storm` to `hippo/storm` (`dev-main`) to consume the Hippo package name directly.
 - Support both `vendor/hippo/storm` and `vendor/winter/storm` helper bootstrap paths to avoid false "Missing vendor files" errors after vendor rename.
 - Improve Storm helper bootstrap failure output with explicit `hippo/storm` guidance and attempted helper paths.
+- Add an `afterCreate()` notification hook to `System\Models\EventLog` that fires `hippo.notify.model.is_touched_by_context` with `create` context for notification rules.
+- Add the raw request `actualUrl`, scheme, host, and port to structured Event Log web context so the user-visited URL is preserved separately from the multisite or canonical URL.
+- Add a generic Event Log details fallback so records without structured exception metadata still render a clear message and raw details.
 
 ### Changed
 
@@ -44,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ignore the generated `docker/caddy-local-root.crt` file so local cert exports do not dirty the working tree.
 - Update README local HTTPS setup instructions to use the new certificate automation script.
 - Make `docker/build-image.sh`, `scripts/release.sh`, and `scripts/release-dev.sh` automatically remove the temporary Docker Buildx builder container after build or push completes.
+- Render `winter:up` with a compact migration summary that shows checked module and plugin counts, migrated and skipped totals, and colorized migrated version entries.
+- Enrich system Event Log context with request correlation IDs, route controller and action breakdowns, masked safe input values, bulk action metadata, actor role details, Hippo profile and space context, and CLI command metadata.
+- Expand Event Log notification payloads with flattened exception, request, actor, Hippo profile and space, route, theme, CLI, and raw detail fields so templates can reference log context directly.
+- Align the default Event Log preview and details UI with the cleaned summary and request-flow layout, including merged Who and Area-Theme cards, collapsed diagnostic metadata, and removal of duplicate diagnostic panels and the Action summary card.
+- Change `System\Classes\FileManifest` file discovery to use local `scandir` recursion so `winter:version` can build manifests reliably in Docker bind mounts where `RecursiveDirectoryIterator` can fail.
+- Patch `modules/system/assets/ui/storm-min.js` popup content flow so custom popup scripts and modal bindings execute correctly after dynamic content updates.
 
 ### Fixed
 
@@ -62,6 +71,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Link filter widgets to list widgets when registered as list filters, allowing filters without an explicit model to fall back to the attached list widget model.
 - Prevent the legacy group filter popover handler from running against custom filter widget popovers.
 - Missing `aws/aws-sdk-php` and `league/flysystem-aws-s3-v3` package for supporting S3 FileSystem.
+- Prevent Event Log notifications from recursively dispatching alerts for Telegram notification transport failures.
+- Store error-level Event Log messages with the same enriched request context as exception reports while preserving plain info and debug payloads.
+- Keep `system_files.attachment_id` aligned with WinterCMS polymorphic attachments by restoring the migration to `VARCHAR(255)` and adding an idempotent follow-up migration for environments that already migrated it to an integer.
+- Scope CMS theme template cache keys to the theme filesystem path to prevent Redis cache collisions between themes with identical layout or partial names.
 
 ## [1.0.9]
 

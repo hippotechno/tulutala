@@ -1,5 +1,3 @@
 # Changelog
 
-## Unreleased
-
-- Scope CMS theme template cache keys to the theme filesystem path to prevent Redis cache collisions between themes with identical layout or partial names.
+Module-level changelog entries for `my_wintercms` are tracked in the root [`CHANGELOG.md`](/Users/khuta/Desktop/CongViec/Sites/my_wintercms/CHANGELOG.md).
