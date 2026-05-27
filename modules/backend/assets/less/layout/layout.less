@@ -192,16 +192,33 @@ body {
 
     .toolbar-item-search .search-widget-control {
         display: inline-flex;
+    }
+
+    .toolbar-item-search .search-grow-group {
+        display: inline-flex;
         align-items: center;
         gap: 6px;
+        justify-content: flex-end;
+        width: clamp(220px, 24vw, 360px);
     }
 
     .toolbar-item-search .search-input-wrap {
+        display: flex;
+        flex: 1 1 auto;
+        justify-content: flex-end;
         position: relative;
     }
 
     .toolbar-item-search .search-input-wrap > input.form-control {
+        max-width: 100%;
         padding-right: 32px;
+        transition: width 0.18s ease;
+        width: clamp(130px, 14vw, 180px);
+    }
+
+    .toolbar-item-search .search-input-wrap > input.form-control.growable:active,
+    .toolbar-item-search .search-input-wrap > input.form-control.growable:focus {
+        width: 100% !important;
     }
 
     .toolbar-item-search .search-input-wrap .clear-input-text {

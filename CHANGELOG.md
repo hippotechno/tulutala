@@ -37,6 +37,8 @@ All notable changes to this project will be documented in this file.
 - Extend fielded backend list search for boolean columns so label aliases such as `hien-thi` accept localized and shorthand boolean values like `Có/Không`, `co/khong`, `true/false`, and `1/0`, and surface that guidance in the search helper popup.
 - Rewrite the backend search helper popup copy in more user-facing language, with clearer examples for general search, per-column search, exact phrases, and boolean values.
 - Clarify in the backend search helper popup that multi-word fielded searches match the full phrase within that field, and explain how visible column labels are normalized into aliases such as `Năm sinh` -> `nam-sinh`.
+- Group the backend search helper trigger and search input into one shared search control, with the helper button positioned on the right side of the input so it stays visually attached as the search UI changes size.
+- Port the right-anchored growable toolbar search behavior into the backend default styles so non-UIKit backends expand the search input leftward with the same interaction pattern.
 - Rename the filter scope widget factory to avoid colliding with relation controller filter widget creation.
 - Translate built-in filter widget labels through their configured language keys.
 - Keep number filter widgets in single-value mode by default, only showing condition controls when multiple conditions are explicitly configured.
