@@ -2,29 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## 2026-05-27
-
-### Added
-- Add structured backend list search support for `field:value` and `field:"multi word value"` syntax on searchable list columns while preserving unprefixed terms as the existing global search query.
-- Add label-derived search aliases for searchable backend list columns so end users can target fields using normalized visible column labels instead of only internal config keys.
-- Add a search help info button to backend search widgets that opens a localized popup describing the supported search syntax and the searchable field aliases available on the current list.
-
-### Changed
-- Update core backend list search parsing so recognized field-prefixed tokens target matching searchable columns directly, including relation-backed searchable columns, while unknown tokens continue to fall back to the generic search term.
-- Parse relation-style list columns such as `collection[name]` into relation metadata when the leading segment matches a real model relation, allowing relation leaf fields to participate in both global and fielded search without widening the search to unrelated relation columns.
-- Make backend toolbar search widgets align to the right by default through backend toolbar/CSS rules instead of relying on per-skin width auto-calculation, and give the new search helper trigger a visible default button treatment.
-- Extend fielded backend list search for boolean columns so label aliases such as `hien-thi` accept localized and shorthand boolean values like `Có/Không`, `co/khong`, `true/false`, and `1/0`, and surface that guidance in the search helper popup.
-
-### Fixed
-- Skip backend list search fields that resolve to dynamic attributes or other non-database relation properties, preventing SQL errors for searchable columns such as `address[full_path]` while also hiding unsupported aliases from the search helper popup.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
 ## [1.1.0] - Unreleased
 
 ### Added
 
+- Add structured backend list search support for `field:value` and `field:"multi word value"` syntax on searchable list columns while preserving unprefixed terms as the existing global search query.
+- Add label-derived search aliases for searchable backend list columns so end users can target fields using normalized visible column labels instead of only internal config keys.
+- Add a search help info button to backend search widgets that opens a localized popup describing the supported search syntax and the searchable field aliases available on the current list.
 - Add backend filter widget registration support with `FilterWidgetBase`, `WidgetManager` filter widget registry methods, and custom filter widget rendering, value capture, and query application in `Backend\Widgets\Filter`.
 - Add the default `PluginBase::registerFilterWidgets()` hook so plugins can register backend filter widgets.
 - Add built-in backend filter widgets for `text`, `number`, `date`, `group`, `checkbox`, `switch`, `dropdown`, `button-group`, `daterange`, and `numberrange` scopes under `modules/backend/filterwidgets`.
@@ -46,6 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Update core backend list search parsing so recognized field-prefixed tokens target matching searchable columns directly, including relation-backed searchable columns, while unknown tokens continue to fall back to the generic search term.
+- Treat multi-word fielded search values as phrase matches scoped to that field, so queries like `ten:nam du` and `ten:"nam du"` search the exact `nam du` phrase instead of splitting the words across generic or per-word matching.
+- Parse relation-style list columns such as `collection[name]` into relation metadata when the leading segment matches a real model relation, allowing relation leaf fields to participate in both global and fielded search without widening the search to unrelated relation columns.
+- Make backend toolbar search widgets align to the right by default through backend toolbar/CSS rules instead of relying on per-skin width auto-calculation, and give the new search helper trigger a visible default button treatment.
+- Extend fielded backend list search for boolean columns so label aliases such as `hien-thi` accept localized and shorthand boolean values like `Có/Không`, `co/khong`, `true/false`, and `1/0`, and surface that guidance in the search helper popup.
+- Rewrite the backend search helper popup copy in more user-facing language, with clearer examples for general search, per-column search, exact phrases, and boolean values.
+- Clarify in the backend search helper popup that multi-word fielded searches match the full phrase within that field, and explain how visible column labels are normalized into aliases such as `Năm sinh` -> `nam-sinh`.
 - Rename the filter scope widget factory to avoid colliding with relation controller filter widget creation.
 - Translate built-in filter widget labels through their configured language keys.
 - Keep number filter widgets in single-value mode by default, only showing condition controls when multiple conditions are explicitly configured.
@@ -72,6 +63,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Skip backend list search fields that resolve to dynamic attributes or other non-database relation properties, preventing SQL errors for searchable columns such as `address[full_path]` while also hiding unsupported aliases from the search helper popup.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Build the Docker PHP GD extension with WebP support and include the matching runtime WebP library so image upload and thumbnail flows can process `.webp` files inside the app container.
 - Build `hippo/storm` from Composer `source` instead of forcing `dist`, and update the lock file to the current `hippo/storm` `main` commit so dev images stop reinstalling the stale pre-fix Storm snapshot that reintroduced attachment morph cast errors.
 - Add a preflight `hippo/storm` sync check for build and release scripts so they warn when `vendor/hippo/storm` HEAD differs from `composer.lock` and can update the lock file interactively before continuing.

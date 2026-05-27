@@ -556,6 +556,7 @@ class Lists extends WidgetBase
                 $innerQuery->where(function ($fieldQuery) use ($fieldConfig, $fieldSearch) {
                     $booleanValue = $this->normalizeBooleanSearchValue($fieldSearch['term']);
                     $handled = false;
+                    $mode = !empty($fieldSearch['exact']) ? 'exact' : null;
 
                     foreach ($fieldConfig['targets'] as $target) {
                         if (!empty($target['boolean'])) {
@@ -568,7 +569,7 @@ class Lists extends WidgetBase
                             continue;
                         }
 
-                        $this->applySearchTargetToQuery($fieldQuery, $target, $fieldSearch['term'], 'or');
+                        $this->applySearchTargetToQuery($fieldQuery, $target, $fieldSearch['term'], 'or', $mode);
                         $handled = true;
                     }
 
@@ -1782,9 +1783,10 @@ class Lists extends WidgetBase
     /**
      * Applies the search constraint to a query.
      */
-    protected function applySearchToQuery($query, $columns, $boolean = 'and', $term = null)
+    protected function applySearchToQuery($query, $columns, $boolean = 'and', $term = null, $mode = null)
     {
         $term = $term ?? $this->searchTerm;
+        $mode = $mode ?? $this->searchMode;
 
         if ($scopeMethod = $this->searchScope) {
             $searchMethod = $boolean == 'and' ? 'where' : 'orWhere';
@@ -1794,7 +1796,7 @@ class Lists extends WidgetBase
         }
         else {
             $searchMethod = $boolean == 'and' ? 'searchWhere' : 'orSearchWhere';
-            $query->$searchMethod($term, $columns, $this->searchMode);
+            $query->$searchMethod($term, $columns, $mode);
         }
     }
 
@@ -1938,17 +1940,17 @@ class Lists extends WidgetBase
     /**
      * Applies a field-specific search target to a query.
      */
-    protected function applySearchTargetToQuery($query, array $target, string $term, string $boolean = 'and'): void
+    protected function applySearchTargetToQuery($query, array $target, string $term, string $boolean = 'and', ?string $mode = null): void
     {
         if (!empty($target['relation'])) {
             $method = $boolean === 'or' ? 'orWhereHas' : 'whereHas';
-            $query->$method($target['relation'], function ($_query) use ($target, $term) {
-                $this->applySearchToQuery($_query, [$target['expression']], 'and', $term);
+            $query->$method($target['relation'], function ($_query) use ($target, $term, $mode) {
+                $this->applySearchToQuery($_query, [$target['expression']], 'and', $term, $mode);
             });
             return;
         }
 
-        $this->applySearchToQuery($query, [$target['expression']], $boolean, $term);
+        $this->applySearchToQuery($query, [$target['expression']], $boolean, $term, $mode);
     }
 
     /**
@@ -2024,14 +2026,13 @@ class Lists extends WidgetBase
             return $parsed;
         }
 
-        preg_match_all('/([\pL\pN_.\-\[\]]+):(?:"((?:\\\\.|[^"\\\\])*)"|(\\S+))/u', $term, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
+        preg_match_all('/([\pL\pN_.\-\[\]]+):/u', $term, $matches, PREG_SET_ORDER | PREG_OFFSET_CAPTURE);
 
         if (!$matches) {
             return $parsed;
         }
 
-        $consumed = [];
-
+        $recognizedMatches = [];
         foreach ($matches as $match) {
             $field = mb_strtolower($match[1][0]);
 
@@ -2039,9 +2040,45 @@ class Lists extends WidgetBase
                 continue;
             }
 
-            $value = $match[2][1] !== -1
-                ? stripcslashes($match[2][0])
-                : $match[3][0];
+            $recognizedMatches[] = [
+                'field' => $field,
+                'offset' => $match[0][1],
+                'length' => strlen($match[0][0]),
+            ];
+        }
+
+        if (!$recognizedMatches) {
+            return $parsed;
+        }
+
+        $consumed = [];
+
+        foreach ($recognizedMatches as $index => $match) {
+            $valueStart = $match['offset'] + $match['length'];
+            $valueEnd = isset($recognizedMatches[$index + 1])
+                ? $recognizedMatches[$index + 1]['offset']
+                : strlen($term);
+
+            $rawValue = trim(substr($term, $valueStart, $valueEnd - $valueStart));
+
+            if ($rawValue === '') {
+                continue;
+            }
+
+            $exact = false;
+            $value = $rawValue;
+
+            if (
+                strlen($rawValue) >= 2
+                && $rawValue[0] === '"'
+                && substr($rawValue, -1) === '"'
+            ) {
+                $value = stripcslashes(substr($rawValue, 1, -1));
+                $exact = true;
+            }
+            elseif (preg_match('/\s/u', $rawValue)) {
+                $exact = true;
+            }
 
             $value = trim($value);
 
@@ -2050,13 +2087,14 @@ class Lists extends WidgetBase
             }
 
             $parsed['fields'][] = [
-                'field' => $field,
+                'field' => $match['field'],
                 'term' => $value,
+                'exact' => $exact,
             ];
 
             $consumed[] = [
-                'offset' => $match[0][1],
-                'length' => strlen($match[0][0]),
+                'offset' => $match['offset'],
+                'length' => $valueEnd - $match['offset'],
             ];
         }
 
